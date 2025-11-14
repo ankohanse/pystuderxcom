@@ -4,9 +4,9 @@ import threading
 import pytest
 import pytest_asyncio
 
-from aioxcom import XcomDiscover, XcomApiTcp, XcomDataset, XcomData, XcomPackage
-from aioxcom import XcomApiTimeoutException, XcomApiResponseIsError
-from aioxcom import XcomVoltage, XcomFormat, ScomService, ScomObjType, ScomQspId, ScomErrorCode
+from pystuderxcom import XcomDiscover, XcomApiTcp, XcomDataset, XcomData, XcomPackage
+from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
+from pystuderxcom import XcomVoltage, XcomFormat, ScomService, ScomObjType, ScomQspId, ScomErrorCode
 from . import XcomTestClientTcp
 
 

@@ -1,7 +1,7 @@
 from typing import Literal
 import pytest
 import pytest_asyncio
-from aioxcom import XcomVoltage, XcomLevel, XcomFormat
+from pystuderxcom import XcomVoltage, XcomLevel, XcomFormat
 
 
 @pytest.mark.parametrize(

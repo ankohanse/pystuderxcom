@@ -2,8 +2,8 @@ import asyncio
 import logging
 import sys
 
-from aioxcom import XcomApiTcp, XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
-from aioxcom import XcomVoltage, XcomAggregationType, XcomFormat
+from pystuderxcom import XcomApiTcp, XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
+from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

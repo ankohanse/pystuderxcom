@@ -1,6 +1,6 @@
 [project]
-name = "aioxcom"
-version = "2.4.0"
+name = "pystuderxcom"
+version = "3.0.0"
 authors = [
   { name="Anko Hanse", email="anko_hanse@hotmail.com" },
 ]
@@ -25,8 +25,8 @@ tests = [
 ]
  
 [project.urls]
-Homepage = "https://github.com/ankohanse/aioxcom"
-Issues = "https://github.com/ankohanse/aioxcom/issues"
+Homepage = "https://github.com/ankohanse/pystuderxcom"
+Issues = "https://github.com/ankohanse/pystuderxcom/issues"
 
 [build-system]
 requires = [
@@ -40,5 +40,5 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-aioxcom = ["*.json"]
+pystuderxcom = ["*.json"]
 

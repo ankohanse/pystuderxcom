@@ -4,7 +4,7 @@ import asyncio
 import logging
 import socket
 
-from aioxcom import  (
+from pystuderxcom import  (
     XcomApiTimeoutException,
     XcomApiReadException,
     XcomApiWriteException,

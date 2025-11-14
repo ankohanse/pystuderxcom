@@ -5,7 +5,7 @@ import logging
 
 import serial_asyncio
 
-from aioxcom import  (
+from pystuderxcom import  (
     XcomApiTimeoutException,
     XcomApiReadException,
     XcomApiWriteException,

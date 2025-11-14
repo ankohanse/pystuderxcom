@@ -1,8 +1,8 @@
 
 import pytest
-from aioxcom import XcomDeviceFamilies
-from aioxcom import XcomDeviceFamilyUnknownException, XcomDeviceCodeUnknownException, XcomDeviceAddrUnknownException, XcomParamException
-from aioxcom import XcomAggregationType
+from pystuderxcom import XcomDeviceFamilies
+from pystuderxcom import XcomDeviceFamilyUnknownException, XcomDeviceCodeUnknownException, XcomDeviceAddrUnknownException, XcomParamException
+from pystuderxcom import XcomAggregationType
 
 
 def test_list():

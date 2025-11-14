@@ -3,7 +3,7 @@ from dataclasses import asdict
 import logging
 import sys
 
-from aioxcom import XcomApiTcp, XcomDataset, XcomDiscover, XcomVoltage
+from pystuderxcom import XcomApiTcp, XcomDataset, XcomDiscover, XcomVoltage
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

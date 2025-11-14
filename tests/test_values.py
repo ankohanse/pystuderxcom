@@ -1,9 +1,9 @@
 import math
 import pytest
 import pytest_asyncio
-from aioxcom import XcomValues, XcomValuesItem
-from aioxcom import XcomFormat, XcomVoltage, XcomAggregationType
-from aioxcom import XcomDataset, XcomDatapoint
+from pystuderxcom import XcomValues, XcomValuesItem
+from pystuderxcom import XcomFormat, XcomVoltage, XcomAggregationType
+from pystuderxcom import XcomDataset, XcomDatapoint
 
 
 @pytest_asyncio.fixture

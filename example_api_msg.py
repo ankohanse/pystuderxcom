@@ -3,8 +3,8 @@ from datetime import datetime
 import logging
 import sys
 
-from aioxcom import XcomApiTcp, XcomData, XcomValues, XcomValuesItem
-from aioxcom import XcomVoltage, XcomAggregationType, XcomFormat
+from pystuderxcom import XcomApiTcp, XcomData, XcomValues, XcomValuesItem
+from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

@@ -2,7 +2,7 @@
 [![buy_me_a_coffee](https://img.shields.io/badge/If%20you%20like%20it-Buy%20me%20a%20coffee-yellow.svg?style=for-the-badge)](https://www.buymeacoffee.com/ankohanse)
 
 
-# aioxcom
+# pystuderxcom
 
 Python library for retrieving sensor information from Studer-Innotec devices.
 This component connects directly over the local network using the Studer xcom protocol.
@@ -64,12 +64,12 @@ Configuration steps:
 # Usage
 
 The library is available from PyPi using:
-`pip install aioxcom`
+`pip install pystuderxcom`
 
 To read an infos or param or write to a param:
 
 ```
-from aioxcom import XcomApiTcp, XcomDataset, XcomVoltage
+from pystuderxcom import XcomApiTcp, XcomDataset, XcomVoltage
 
 dataset = await XcomDataset.create(XcomVoltage.AC240) # or use XcomVoltage.AC120
 info_3023 = dataset.getByNr(3023, "xt")  # the "xt" part is optional but usefull for detecting mistakes
@@ -100,9 +100,9 @@ finally:
     await api.stop()
 ```
 
-A complete list of param and infos numbers can be found in the source of this library in file `src/aioxcom/xcom_datapoints_240v.json`  
+A complete list of param and infos numbers can be found in the source of this library in file `src/pystuderxcom/xcom_datapoints_240v.json`  
 
-A complete list of all available device families and their address range can be found in file `src/aioxcom/xcom_families.py`  
+A complete list of all available device families and their address range can be found in file `src/pystuderxcom/xcom_families.py`  
 
 
 # Param writes to device RAM

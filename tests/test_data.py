@@ -2,8 +2,8 @@ from datetime import datetime
 import math
 import pytest
 import pytest_asyncio
-from aioxcom import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
-from aioxcom import XcomFormat, XcomAggregationType
+from pystuderxcom import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
+from pystuderxcom import XcomFormat, XcomAggregationType
 
 
 @pytest_asyncio.fixture

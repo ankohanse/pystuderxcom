@@ -4,7 +4,7 @@ import sys
 
 from datetime import datetime
 
-from aioxcom import XcomDiscover
+from pystuderxcom import XcomDiscover
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

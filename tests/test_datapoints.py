@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from aioxcom import XcomDataset, XcomVoltage, XcomFormat, XcomCategory, XcomDatapointUnknownException
+from pystuderxcom import XcomDataset, XcomVoltage, XcomFormat, XcomCategory, XcomDatapointUnknownException
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
-from aioxcom import XcomLevel
-from aioxcom import XcomMessage, XcomMessageDef, XcomMessageSet, XcomMessageUnknownException
+from pystuderxcom import XcomLevel
+from pystuderxcom import XcomMessage, XcomMessageDef, XcomMessageSet, XcomMessageUnknownException
 
 
 @pytest.mark.asyncio

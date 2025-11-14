@@ -4,11 +4,11 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from aioxcom import XcomApiSerial, XcomDataset, XcomData, XcomPackage
-from aioxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
-from aioxcom import XcomValues, XcomValuesItem
-from aioxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
-from aioxcom import XcomDataMessageRsp
+from pystuderxcom import XcomApiSerial, XcomDataset, XcomData, XcomPackage
+from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
+from pystuderxcom import XcomValues, XcomValuesItem
+from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
+from pystuderxcom import XcomDataMessageRsp
 from . import XcomTestClientSerial
 
 
