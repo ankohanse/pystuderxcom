@@ -1,7 +1,7 @@
 """xcom_api.py: communication api to Studer Xcom via LAN."""
 
-import aiohttp
 import asyncio
+import httpx
 import ipaddress
 import logging
 import os
@@ -23,7 +23,8 @@ from .families import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-logging.getLogger("aiohttp").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("getmac").setLevel(logging.WARNING)
 
 
@@ -275,20 +276,21 @@ class AsyncXcomDiscover:
                 pass
 
         # Define helper function to check for Moxa Web Config page
-        async def check_url(session, url:str) -> str|None:
+        async def check_url(client:httpx.AsyncClient, url:str) -> str|None:
             _LOGGER.info(f"Trying {url}")
-            async with session.get(url) as rsp:
-                if rsp and rsp.ok and rsp.headers.get("Server", "").startswith("Moxa"):
+            try:
+                rsp = await client.get(url)
+                if rsp and rsp.is_success and rsp.headers.get("Server", "").startswith("Moxa"):
                     return url
                 else:
                     return None
+            except:
+                pass
 
         # Parallel check for Moxa Web Config page on all found device url's
         # No need to SSL verify plain HTTP GET calls, this also keeps Home Assistant happy
-        async with aiohttp.ClientSession(
-            connector = aiohttp.TCPConnector(ssl = False) 
-        ) as session:  
-            tasks = [asyncio.create_task(check_url(session, url)) for url in urls]
+        async with httpx.AsyncClient(verify=False) as client:
+            tasks = [asyncio.create_task(check_url(client, url)) for url in urls]
             for task in asyncio.as_completed(tasks):
                 try:
                     url = await task
