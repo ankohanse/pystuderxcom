@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 import sys
 
-from pystuderxcom import XcomApiTcp, XcomData, XcomValues, XcomValuesItem
+from pystuderxcom import AsyncXcomApiTcp, XcomData, XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 
 # Setup logging to StdOut
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 async def main():
 
-    api = XcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
+    api = AsyncXcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
     try:
         if not await api.start():
             logger.info(f"Did not connect to Xcom")

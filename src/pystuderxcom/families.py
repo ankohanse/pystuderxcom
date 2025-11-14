@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from .xcom_const import (
+from .const import (
     XcomAggregationType,
     XcomParamException,
 ) 

@@ -71,7 +71,7 @@ To read an infos or param or write to a param:
 ```
 from pystuderxcom import XcomApiTcp, XcomDataset, XcomVoltage
 
-dataset = await XcomDataset.create(XcomVoltage.AC240) # or use XcomVoltage.AC120
+dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
 info_3023 = dataset.getByNr(3023, "xt")  # the "xt" part is optional but usefull for detecting mistakes
 info_6001 = dataset.getByNr(6001, "bsp")
 param_1107 = dataset.getByNr(1107, "xt")

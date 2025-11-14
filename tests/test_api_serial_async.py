@@ -1,15 +1,17 @@
 import asyncio
+from asyncio import events
 import copy
 from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import XcomApiSerial, XcomDataset, XcomData, XcomPackage
+from pystuderxcom import AsyncXcomApiSerial, AsyncXcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
+from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import XcomTestClientSerial
+from . import AsyncXcomTestSerial
 
 
 ###
@@ -21,16 +23,15 @@ CLIENT_PORT = 'COM3'
 class TestContext:
     __test__ = False  # Prevent pytest from collecting this class
 
-    def __init__(self, loop):
+    def __init__(self):
         self.server = None
         self.client = None
-        self._loop = loop
 
     async def start_server(self):
         if not self.server:
-            self.server = XcomApiSerial(SERVER_PORT)
+            self.server = AsyncXcomApiSerial(SERVER_PORT)
 
-        await self.server.start(loop=self._loop)
+        await self.server.start()
 
     async def stop_server(self):
         if self.server:
@@ -39,9 +40,9 @@ class TestContext:
 
     async def start_client(self):
         if not self.client:
-            self.client = XcomTestClientSerial(CLIENT_PORT)
+            self.client = AsyncXcomTestSerial(CLIENT_PORT)
 
-        await self.client.start(loop=self._loop)
+        await self.client.start()
 
     async def stop_client(self):
         if self.client:
@@ -50,30 +51,22 @@ class TestContext:
 
 
 @pytest_asyncio.fixture()
-async def context(event_loop):
+async def context():
     # Prepare
-    ctx = TestContext(event_loop)
+    ctx = TestContext()
 
     # pass objects to tests
     yield ctx
 
-    # cleanup
+    # Cleanup after tests are finished
     await ctx.stop_client()
     await ctx.stop_server()
-
-    event_loop.close()
 
     # Wait a bit until the next test, Windows Virtual Port Driver does not like to be rushed...
     await asyncio.sleep(1)
 
 
-@pytest.fixture(scope="module")
-def event_loop():
-    loop = asyncio.get_event_loop()
-    yield loop
-
-
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context")
 @pytest.mark.parametrize(
     "name, start_server, start_client, wait_server, exp_server_conn, exp_client_conn",
@@ -105,7 +98,7 @@ async def test_connect(name, start_server, start_client, wait_server, exp_server
     assert context.client is None or context.client.connected == exp_client_conn
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context")
 @pytest.mark.parametrize(
     "name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
@@ -128,7 +121,7 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
     assert context.server.connected == True
     assert context.client.connected == True
 
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
     # Helper function for client to handle a request and submit a response
@@ -169,7 +162,7 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
             await task_server
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context")
 @pytest.mark.parametrize(
     "name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
@@ -191,7 +184,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
     assert context.server.connected == True
     assert context.client.connected == True
 
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
     # Helper function for client to handle a request and submit a response
@@ -234,7 +227,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
 
 @pytest_asyncio.fixture
 async def dataset():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     yield dataset
 
 @pytest_asyncio.fixture
@@ -333,7 +326,7 @@ async def data_infos_params_aggr(dataset):
     yield req_data, rsp_multi, rsp_single_val
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context", "dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr")
 @pytest.mark.parametrize(
     "name, values_fixture, run_client, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except",
@@ -421,7 +414,7 @@ async def test_requestInfos(name, values_fixture, run_client, exp_src_addr, exp_
             await task_server
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context", "dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr")
 @pytest.mark.parametrize(
     "name, values_fixture, run_client, loops_client, rsp_flags, exp_value, exp_error, exp_except",
@@ -509,7 +502,7 @@ async def test_requestValues(name, values_fixture, run_client, loops_client, rsp
             await task_server
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context")
 @pytest.mark.parametrize(
     "name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
@@ -574,7 +567,7 @@ async def data_message():
     yield rsp_data
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 @pytest.mark.usefixtures("context", "data_message")
 @pytest.mark.parametrize(
     "name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",

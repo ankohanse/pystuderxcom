@@ -4,11 +4,12 @@ import pytest_asyncio
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomFormat, XcomVoltage, XcomAggregationType
 from pystuderxcom import XcomDataset, XcomDatapoint
+from pystuderxcom import AsyncXcomFactory
 
 
 @pytest_asyncio.fixture
 async def dataset():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     yield dataset
 
 @pytest_asyncio.fixture

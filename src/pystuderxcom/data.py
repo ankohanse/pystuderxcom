@@ -15,7 +15,7 @@ import uuid
 from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
-from .xcom_const import (
+from .const import (
     XcomFormat,
     XcomAggregationType,
     XcomParamException,

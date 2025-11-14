@@ -10,15 +10,15 @@ import struct
 from dataclasses import dataclass
 from getmac import get_mac_address
 
-from .xcom_api_base import (
-    XcomApiBase,
+from .api_base_async import (
+    AsyncXcomApiBase,
 )
-from .xcom_datapoints import (
+from .datapoints import (
     XcomDatapoint,
     XcomDataset,
     XcomDatapointUnknownException,
 )
-from .xcom_families import (
+from .families import (
     XcomDeviceFamilies
 )
 
@@ -53,9 +53,9 @@ class XcomDiscoveredDevice:
     fid: str = None
 
 
-class XcomDiscover:
+class AsyncXcomDiscover:
 
-    def __init__(self, api: XcomApiBase, dataset: XcomDataset):
+    def __init__(self, api: AsyncXcomApiBase, dataset: XcomDataset):
         """
         MOXA is connecting to the TCP Server we are creating here.
         Once it is connected we can send package requests.

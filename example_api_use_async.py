@@ -2,7 +2,8 @@ import asyncio
 import logging
 import sys
 
-from pystuderxcom import XcomApiTcp, XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
+from pystuderxcom import AsyncXcomApiTcp, AsyncXcomFactory
+from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 
 # Setup logging to StdOut
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    dataset = await XcomDataset.create(XcomVoltage.AC240) # or use XcomVoltage.AC120
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
     info_3021 = dataset.getByNr(3021, "xt")  # the "xt" part is optional but usefull for detecting mistakes
     info_3022 = dataset.getByNr(3022, "xt")
     info_3023 = dataset.getByNr(3023, "xt")
@@ -19,7 +20,7 @@ async def main():
     param_5012 = dataset.getByNr(5012, "rcc")
     param_1107 = dataset.getByNr(1107, "xt")
 
-    api = XcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
+    api = AsyncXcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
     try:
         if not await api.start():
             logger.info(f"Did not connect to Xcom")

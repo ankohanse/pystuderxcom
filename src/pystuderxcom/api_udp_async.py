@@ -1,82 +1,102 @@
-"""
-xcom_api_serial.py: communication api to Studer Xcom via serial port.
-
-NOTE: this is a draft implementation that has never been tested against a Xcom-RS232i.
-      Unlike the XcomApiTcp and XcomApiUdp that have indeed been verified.
-"""
+"""xcom_api.py: communication api to Studer Xcom via LAN."""
 
 import asyncio
+import asyncudp
 import binascii
 import logging
-import serial_asyncio
+import socket
 
-from .xcom_api_base import (
-    XcomApiBase,
+from datetime import datetime, timedelta
+from typing import Iterable
+
+from pystuderxcom.protocol import XcomPackage
+
+
+from .api_base_async import (
+    AsyncXcomApiBase,
+    XcomApiWriteException,
     XcomApiReadException,
     XcomApiTimeoutException,
-    XcomApiWriteException,
+    XcomApiUnpackException,
+    XcomApiResponseIsError,
+    START_TIMEOUT,
+    STOP_TIMEOUT,
+    REQ_TIMEOUT,
 )
-from .xcom_protocol import (
-    XcomPackage,
+from .const import (
+    ScomAddress,
+    XcomLevel,
+    XcomFormat,
+    XcomCategory,
+    XcomAggregationType,
+    ScomObjType,
+    ScomObjId,
+    ScomService,
+    ScomQspId,
+    ScomErrorCode,
+    XcomParamException,
+    safe_len,
+)
+from .data import (
+    XcomData,
+    XcomDataMessageRsp,
+    MULTI_INFO_REQ_MAX,
+)
+from .factory_async import (
+    AsyncXcomFactory,
+)
+from .families import (
+    XcomDeviceFamilies
+)
+from .messages import (
+    XcomMessage,
+)
+from .values import (
+    XcomValues,
+    XcomValuesItem,
 )
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-DEFAULT_PORT = 'COM3'   # For Windows, or '/dev/ttyUSB0' for Linux
-DEFAULT_BAUDRATE = 115200
-DEFAULT_DATA_BITS = 8
-DEFAULT_STOP_BITS = serial_asyncio.serial.STOPBITS_ONE
-DEFAULT_PARITY = serial_asyncio.serial.PARITY_NONE
-START_TIMEOUT = 30 # seconds
-STOP_TIMEOUT = 5
-REQ_TIMEOUT = 3
-
-SERIAL_TERMINATOR = b'\x0D\x0A' # from Studer Xcom documentation
+DEFAULT_LOCAL_PORT = 4001
+DEFAULT_REMOTE_PORT = 4001
 
 
 ##
-## Class implementing Xcom-RS232i serial protocol
+## Class implementing Xcom-LAN UDP network protocol
 ##
-class XcomApiSerial(XcomApiBase):
+class AsyncXcomApiUdp(AsyncXcomApiBase):
 
-    def __init__(self, port=DEFAULT_PORT, baudrate=DEFAULT_BAUDRATE):
+    def __init__(self, remote_ip: str, remote_port=DEFAULT_REMOTE_PORT, local_port=DEFAULT_LOCAL_PORT):
         """
-        Initialize a new XcomApiSerial object.
+        We connect to the Moxa using the Udp server we are creating here.
+        Once it is started we can send package requests. 
         """
         super().__init__()
 
-        self.localPort = port
-        self.baudrate = baudrate
-        self._serial = None
-        self._reader = None
-        self._writer = None
+        self._remote_ip = remote_ip
+        self._remote_port = remote_port
+        self._local_port = local_port
+        self._socket = None
         self._connected = False
 
         self._sendPackageLock = asyncio.Lock() # to make sure _sendPackage is never called concurrently
 
 
-    async def start(self, timeout=START_TIMEOUT, loop=None) -> bool:
+    async def start(self, timeout=START_TIMEOUT) -> bool:
         """
-        Start the serial connection to the Xcom-RS232i client.
+        Start the Xcom Server and listening to the Xcom client.
         """
         if not self._connected:
-            _LOGGER.info(f"Xcom-RS232i serial connection start via {self.localPort}")
+            _LOGGER.info(f"Xcom UDP server start listening on port {self._local_port}")
 
-            # Open serial connection. Maybe need to set parity, stopbits, etc as well...
-            self._reader, self._writer = await serial_asyncio.open_serial_connection(
-                loop = loop,
-                url=self.localPort, 
-                baudrate=self.baudrate,
-                bytesize = DEFAULT_DATA_BITS,
-                stopbits = DEFAULT_STOP_BITS,
-                parity = DEFAULT_PARITY
-            )
+            self._socket = await asyncudp.create_socket(local_addr=('0.0.0.0', self._local_port), packets_queue_max_size=100)
             self._connected = True
         else:
-            _LOGGER.info(f"Xcom-RS232i serial connection already connected to {self.localPort}")
-        
+            _LOGGER.info(f"Xcom UDP server already listening on port {self._local_port}")
+
         return True
 
 
@@ -84,22 +104,21 @@ class XcomApiSerial(XcomApiBase):
         """
         Stop listening to the the Xcom Client and stop the Xcom Server.
         """
-        _LOGGER.info(f"Stopping Xcom-RS232i serial connection")
+        _LOGGER.info(f"Stopping Xcom UDP server")
         try:
             self._connected = False
 
             # Close the writer; we do not need to close the reader
-            if self._writer:
-                self._writer.close()
-                await self._writer.wait_closed()
-    
+            if self._socket:
+                self._socket.close()
+                
         except Exception as e:
-            _LOGGER.warning(f"Exception during closing of Xcom writer: {e}")
+            _LOGGER.warning(f"Exception during closing of Xcom socket: {e}")
 
-        self._reader = None
-        self._writer = None
-        _LOGGER.info(f"Stopped Xcom-RS232i serial Connection")
-    
+        self._connected = False
+        self._socket = None
+        _LOGGER.info(f"Stopped Xcom UDP server")
+
 
     async def _sendPackage(self, request: XcomPackage, timeout=REQ_TIMEOUT, verbose=False) -> XcomPackage | None:
         """
@@ -120,8 +139,8 @@ class XcomApiSerial(XcomApiBase):
                 if verbose:
                     _LOGGER.debug(f"send {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {request}")
 
-                self._writer.write(data)
-
+                self._socket.sendto(data, addr=(self._remote_ip, self._remote_port) )
+                
             except Exception as e:
                 msg = f"Exception while sending request package to Xcom client: {e}"
                 raise XcomApiWriteException(msg) from None
@@ -130,7 +149,8 @@ class XcomApiSerial(XcomApiBase):
             try:
                 async with asyncio.timeout(timeout):
                     while True:
-                        response,data = await XcomPackage.parse(self._reader, verbose=verbose)
+                        data,addr = await self._socket.recvfrom()
+                        response = await AsyncXcomFactory.parse_package_bytes(data, verbose)
 
                         if response.isResponse() and \
                         response.frame_data.service_id == request.frame_data.service_id and \
@@ -139,7 +159,7 @@ class XcomApiSerial(XcomApiBase):
 
                             # Yes, this is the answer to our request
                             if verbose:
-                                _LOGGER.debug(f"recv {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {response}")
+                                _LOGGER.debug(f"recv {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}) from {addr}, decoded: {response}")
                             return response
                         
                         else:
@@ -154,4 +174,5 @@ class XcomApiSerial(XcomApiBase):
             except Exception as e:
                 msg = f"Exception while listening for response package from Xcom client: {e}"
                 raise XcomApiReadException() from None
+
 

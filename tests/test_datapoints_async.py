@@ -1,12 +1,20 @@
 import pytest
 import pytest_asyncio
-from pystuderxcom import XcomDataset, XcomVoltage, XcomFormat, XcomCategory, XcomDatapointUnknownException
+
+from pystuderxcom import (
+    XcomDataset, 
+    XcomVoltage, 
+    XcomFormat, 
+    XcomCategory, 
+    XcomDatapointUnknownException,
+    AsyncXcomFactory,
+)
 
 
 @pytest.mark.asyncio
 async def test_create():
-    dataset120 = await XcomDataset.create(XcomVoltage.AC120)    
-    dataset240 = await XcomDataset.create(XcomVoltage.AC240)
+    dataset120 = await AsyncXcomFactory.create_dataset(XcomVoltage.AC120)    
+    dataset240 = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
 
     assert len(dataset120._datapoints) == 1451
     assert len(dataset240._datapoints) == 1451
@@ -14,7 +22,7 @@ async def test_create():
 
 @pytest.mark.asyncio
 async def test_nr():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
 
     param = dataset.getByNr(1107)
     assert param.family_id == "xt"
@@ -60,7 +68,7 @@ async def test_nr():
 
 @pytest.mark.asyncio
 async def test_enum():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
 
     param = dataset.getByNr(1552)
     assert param.options != None
@@ -80,7 +88,7 @@ async def test_enum():
 
 @pytest.mark.asyncio
 async def test_menu():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     
     root_items = dataset.getMenuItems(0)
     assert len(root_items) == 12

@@ -4,12 +4,13 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import XcomApiUdp, XcomDataset, XcomData, XcomPackage
+from pystuderxcom import AsyncXcomApiUdp, AsyncXcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
+from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import XcomTestClientUdp
+from . import AsyncXcomTestUdp
 
 
 class TestContext:
@@ -21,7 +22,7 @@ class TestContext:
 
     async def start_server(self, remote_ip, remote_port, local_port):
         if not self.server:
-            self.server = XcomApiUdp(remote_ip, remote_port, local_port)
+            self.server = AsyncXcomApiUdp(remote_ip, remote_port, local_port)
 
         await self.server.start()
 
@@ -32,7 +33,7 @@ class TestContext:
 
     async def start_client(self, remote_ip, remote_port, local_port):
         if not self.client:
-            self.client = XcomTestClientUdp(remote_ip, remote_port, local_port)
+            self.client = AsyncXcomTestUdp(remote_ip, remote_port, local_port)
 
         await self.client.start()
 
@@ -120,7 +121,7 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
     assert context.server.connected == True
     assert context.client.connected == True
 
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
     # Helper function for client to handle a request and submit a response
@@ -186,7 +187,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
     assert context.server.connected == True
     assert context.client.connected == True
 
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
     # Helper function for client to handle a request and submit a response
@@ -229,7 +230,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
 
 @pytest_asyncio.fixture
 async def dataset():
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
     yield dataset
 
 @pytest_asyncio.fixture

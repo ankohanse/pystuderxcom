@@ -6,6 +6,7 @@ import logging
 import socket
 
 from pystuderxcom import  (
+    AsyncXcomFactory,
     XcomApiTimeoutException,
     XcomApiReadException,
     XcomApiWriteException,
@@ -25,7 +26,7 @@ REQ_RETRIES = 3
 ##
 ## Class implementing Xcom-LAN TCP network protocol
 ##
-class XcomTestClientUdp:
+class AsyncXcomTestUdp:
 
     def __init__(self, remote_ip: str, remote_port: int, local_port=DEFAULT_LOCAL_PORT):
         """
@@ -103,7 +104,7 @@ class XcomTestClientUdp:
                 async with asyncio.timeout(timeout):
                     while True:
                         data,addr = await self._socket.recvfrom()
-                        request = await XcomPackage.parseBytes(data)
+                        request = await AsyncXcomFactory.parse_package_bytes(data)
 
                         if self._remote_ip is None and self._remote_port is None:
                             self._remote_ip = addr[0]

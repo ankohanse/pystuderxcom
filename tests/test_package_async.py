@@ -2,6 +2,7 @@ from datetime import datetime
 import math
 import pytest
 import pytest_asyncio
+from pystuderxcom import AsyncXcomFactory
 from pystuderxcom import XcomPackage, XcomDataset, XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
 from pystuderxcom import XcomFormat, XcomVoltage, XcomAggregationType, ScomService, ScomObjType, ScomQspId, ScomAddress
 
@@ -110,7 +111,7 @@ async def test_package_props(fixture, exp_src_addr, exp_dst_addr, exp_svc_id, ex
     assert len(buf) > 0
 
     # Test parseBytes (calls parse)
-    clone = await XcomPackage.parseBytes(buf)
+    clone = await AsyncXcomFactory.parse_package_bytes(buf)
 
     assert clone.header.src_addr == exp_src_addr
     assert clone.header.dst_addr == exp_dst_addr
@@ -163,7 +164,7 @@ async def test_package_flags(name, fixture, modify_flags, modify_data, expected_
 
     # Test getBytes and parseBytes
     buf = package.getBytes()
-    clone = await XcomPackage.parseBytes(buf)
+    clone = await AsyncXcomFactory.parse_package_bytes(buf)
 
     assert clone.isResponse() == expected_isResponse
     assert clone.isError() == expected_isError

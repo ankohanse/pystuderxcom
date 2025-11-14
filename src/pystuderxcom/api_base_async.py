@@ -5,8 +5,12 @@ import logging
 
 from datetime import datetime, timedelta
 
+from pystuderxcom.datapoints import XcomDatapoint
+from pystuderxcom.messages import XcomMessage
 
-from .xcom_const import (
+
+
+from .const import (
     ScomAddress,
     XcomFormat,
     XcomCategory,
@@ -18,26 +22,23 @@ from .xcom_const import (
     XcomParamException,
     safe_len,
 )
-from .xcom_protocol import (
-    XcomPackage,
-)
-from .xcom_data import (
+from .data import (
     XcomData,
     XcomDataMessageRsp,
     MULTI_INFO_REQ_MAX,
 )
-from .xcom_values import (
-    XcomValues,
-    XcomValuesItem,
+from .factory_async import (
+    AsyncXcomFactory,
 )
-from .xcom_datapoints import (
-    XcomDatapoint,
-)
-from .xcom_families import (
+from .families import (
     XcomDeviceFamilies
 )
-from .xcom_messages import (
-    XcomMessage,
+from .protocol import (
+    XcomPackage,
+)
+from .values import (
+    XcomValues,
+    XcomValuesItem,
 )
 
 
@@ -49,7 +50,6 @@ STOP_TIMEOUT = 5
 REQ_TIMEOUT = 3
 REQ_RETRIES = 3
 REQ_BURST_PERIOD = 5 # do burst of requests for 5 seconds, then wait a second, then the next burst
-
 
 
 class XcomApiWriteException(Exception):
@@ -68,11 +68,10 @@ class XcomApiResponseIsError(Exception):
     """Exception to indicate an error message was received back from the xcom client"""
 
 
-
 ##
 ## Base cass abstracting Xcom Api
 ##
-class XcomApiBase:
+class AsyncXcomApiBase:
 
     def __init__(self):
         """
@@ -82,6 +81,9 @@ class XcomApiBase:
         self._connected = False
         self._remote_ip = None
         self._request_id = 0
+
+        # Cached values
+        self._msg_set = None
 
         # Diagnostics gathering
         self._diag_retries = {}
@@ -421,6 +423,10 @@ class XcomApiBase:
             XcomApiResponseIsError
         """
 
+        # Make sure we have access to the message_set
+        if self._msg_set is None:
+            self._msg_set = await AsyncXcomFactory.create_messageset()
+
         # Compose the request and send it
         request: XcomPackage = XcomPackage.genPackage(
             service_id = ScomService.READ,
@@ -437,7 +443,7 @@ class XcomApiBase:
             try:
                 # Unpack the response value
                 rsp_data = XcomDataMessageRsp.unpack(response.frame_data.service_data.property_data)
-                return await XcomMessage.from_rsp(rsp_data)
+                return XcomMessage(rsp_data, self._msg_set)
 
             except Exception as e:
                 msg = f"Failed to unpack response package for message request, data={response.frame_data.service_data.property_data.hex()}: {e}"

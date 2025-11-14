@@ -14,12 +14,12 @@ import logging
 import struct
 from io import BufferedWriter, BufferedReader, BytesIO
 
-from .xcom_const import (
+from .const import (
     XcomFormat,
     ScomAddress,
     ScomErrorCode,
 )
-from .xcom_data import (
+from .data import (
     XcomData,
     readFloat,
     writeFloat,
@@ -165,56 +165,13 @@ class XcomHeader:
         return f"Header(flags={self.frame_flags}, src={self.src_addr}, dst={self.dst_addr}, data_length={self.data_length})"
 
 
-class XcomPackage:
+class XcomPackage():
 
     start_byte: bytes = b'\xAA'
     delimeters: bytes = b'\x0D\x0A'
     header: XcomHeader
     frame_data: XcomFrame
 
-    @staticmethod
-    async def parse(f: asyncio.StreamReader, verbose=False):
-        # package sometimes starts with 0xff
-        skipped = bytearray(b'')
-        while True:
-            sb = await readBytes(f, 1)
-            if sb == XcomPackage.start_byte:
-                break
-
-            skipped.extend(sb)
-
-        if verbose and len(skipped) > 0:
-            _LOGGER.debug(f"skip {len(skipped)} bytes until start-byte ({binascii.hexlify(skipped).decode('ascii')})")
-
-        h_raw = await readBytes(f, XcomHeader.length)
-        h_chk = await readBytes(f, 2)
-        assert checksum(h_raw) == h_chk
-        header = XcomHeader.parseBytes(h_raw)
-
-        f_raw = await readBytes(f, header.data_length)
-        f_chk = await readBytes(f, 2)
-        assert checksum(f_raw) == f_chk
-        frame = XcomFrame.parseBytes(f_raw)
-
-        package = XcomPackage(header, frame)
-
-        data = bytearray(b'')
-        data.extend(sb)
-        data.extend(h_raw)
-        data.extend(h_chk)
-        data.extend(f_raw)
-        data.extend(f_chk)
-
-        return package, data
-
-    @staticmethod
-    async def parseBytes(buf: bytes, verbose=False):
-        reader = asyncio.StreamReader()
-        reader.feed_data(buf)
-
-        package, _ = await XcomPackage.parse(reader, verbose)
-        return package
-    
     @staticmethod
     def genPackage(
             service_id: int,
@@ -240,11 +197,11 @@ class XcomPackage:
 
         header = self.header.getBytes()
         writeBytes(f, header)
-        writeBytes(f, checksum(header))
+        writeBytes(f, XcomPackage.checksum(header))
 
         data = self.frame_data.getBytes()
         writeBytes(f, data)
-        writeBytes(f, checksum(data))
+        writeBytes(f, XcomPackage.checksum(data))
 
         # Don't write delimeter, seems not needed as we send the package in one whole chunk
         #writeBytes(f, self.delimeters)
@@ -269,19 +226,19 @@ class XcomPackage:
     def __str__(self) -> str:
         return f"Package(header={self.header}, frame={self.frame_data})"
 
-##
 
-def checksum(data: bytes) -> bytes:
-    """Function to calculate the checksum needed for the header and the data"""
-    A = 0xFF
-    B = 0x00
+    @staticmethod
+    def checksum(data: bytes) -> bytes:
+        """Function to calculate the checksum needed for the header and the data"""
+        A = 0xFF
+        B = 0x00
 
-    for d in data:
-        A = (A + d) % 0x100
-        B = (B + A) % 0x100
+        for d in data:
+            A = (A + d) % 0x100
+            B = (B + A) % 0x100
 
-    A = struct.pack("<B", A)
-    B = struct.pack("<B", B)
+        A = struct.pack("<B", A)
+        B = struct.pack("<B", B)
 
-    return A + B
+        return A + B
 

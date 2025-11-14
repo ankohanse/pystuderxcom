@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 
-from pystuderxcom import XcomDataset, XcomVoltage, XcomFormat
+from pystuderxcom import AsyncXcomFactory, XcomVoltage, XcomFormat
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 async def main():
     # Print entire menu structure
-    dataset = await XcomDataset.create(XcomVoltage.AC240) # or use XcomVoltage.AC120
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
 
     # Helper function to recursively print the entire menu
     async def printMenu(parent, indent=""):

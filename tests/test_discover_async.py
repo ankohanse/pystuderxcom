@@ -4,10 +4,11 @@ import threading
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import XcomDiscover, XcomApiTcp, XcomDataset, XcomData, XcomPackage
+from pystuderxcom import AsyncXcomDiscover, AsyncXcomApiTcp, AsyncXcomFactory
+from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
 from pystuderxcom import XcomVoltage, XcomFormat, ScomService, ScomObjType, ScomQspId, ScomErrorCode
-from . import XcomTestClientTcp
+from . import AsyncXcomTestClientTcp
 
 
 class TestContext:
@@ -20,14 +21,14 @@ class TestContext:
         self.client_stop = threading.Event()
 
     async def start_discover(self, dataset):
-        self.discover = XcomDiscover(self.server, dataset)
+        self.discover = AsyncXcomDiscover(self.server, dataset)
 
     async def stop_discover(self):
         self.discover = None
 
     async def start_server(self, port):
         if not self.server:
-            self.server = XcomApiTcp(port)
+            self.server = AsyncXcomApiTcp(port)
 
         await self.server.start(wait_for_connect = False)
 
@@ -38,7 +39,7 @@ class TestContext:
 
     async def start_client(self, port):
         if not self.client:
-            self.client = XcomTestClientTcp(port)
+            self.client = AsyncXcomTestClientTcp(port)
 
         await self.client.start()
 
@@ -128,8 +129,8 @@ async def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
     assert context.client.connected == True
 
     # Once the server is started, we can use it to create the discovery helper
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
-    discover = XcomDiscover(api=context.server, dataset=dataset)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
 
     # Start 2 parallel tasks, for server and for client
     task_discover = asyncio.create_task(discover.discoverDevices(getExtendedInfo=False))
@@ -228,8 +229,8 @@ async def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_mod
     assert context.client.connected == True
 
     # Once the server is started, we can use it to create the discovery helper
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
-    discover = XcomDiscover(api=context.server, dataset=dataset)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
 
     # Start 2 parallel tasks, for server and for client
     task_discover = asyncio.create_task(discover.discoverDevices(getExtendedInfo=True))
@@ -282,8 +283,8 @@ async def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_mac, exp_guid, r
     assert context.client.connected == True
 
     # Once the server is started, we can use it to create the discovery helper
-    dataset = await XcomDataset.create(XcomVoltage.AC240)
-    discover = XcomDiscover(api=context.server, dataset=dataset)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
 
     # Start 2 parallel tasks, for server and for client
     task_discover = asyncio.create_task(discover.discoverClientInfo())

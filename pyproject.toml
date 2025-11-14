@@ -4,7 +4,7 @@ version = "3.0.0"
 authors = [
   { name="Anko Hanse", email="anko_hanse@hotmail.com" },
 ]
-description = "Async python library to communicate with Studer-Innotec devices on the local network via Xcom protocol"
+description = "Python library to communicate with Studer-Innotec devices on the local network via Xcom protocol"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -32,7 +32,8 @@ Issues = "https://github.com/ankohanse/pystuderxcom/issues"
 requires = [
     "setuptools>=61.0",
     "wheel",
-    "cython"
+    "cython",
+    "unasyncd",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -42,3 +43,5 @@ where = ["src"]
 [tool.setuptools.package-data]
 pystuderxcom = ["*.json"]
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
