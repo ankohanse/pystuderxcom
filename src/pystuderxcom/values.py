@@ -27,7 +27,7 @@ from .data import (
     XcomDataMultiInfoRsp,
     XcomDataMultiInfoRspItem,
 )
-from .factory_async import (
+from .datapoints import (
     XcomDatapoint,
     XcomDataset,
 )

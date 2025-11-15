@@ -8,6 +8,8 @@
 ##
 
 
+import asyncio
+import io
 import logging
 import struct
 import uuid
@@ -249,6 +251,16 @@ class XcomDataMessageRsp:
 
 
 ##
+
+class AsyncReader(asyncio.StreamReader):
+    def __init__(self, buf: bytes):
+        super().__init__()
+        self.feed_data(buf)
+
+class SyncReader(io.BytesIO):
+    def __init__(self, buf: bytes):
+        super().__init__(buf)
+
 
 def readFloat(f: BufferedReader) -> float:
     return struct.unpack('<f', f.read(4))

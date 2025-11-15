@@ -1,3 +1,7 @@
 from .xcom_testclient_tcp_async import AsyncXcomTestClientTcp
 from .xcom_testclient_udp_async import AsyncXcomTestUdp
 from .xcom_testclient_serial_async import AsyncXcomTestSerial
+
+from .xcom_testclient_tcp_sync import XcomTestClientTcp
+from .xcom_testclient_udp_sync import XcomTestUdp
+from .xcom_testclient_serial_sync import XcomTestSerial

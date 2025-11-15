@@ -15,8 +15,11 @@ requires-python = ">=3.8"
 dependencies = [
   'httpx',
   'getmac',
-  'asyncudp'
+  'asyncudp',
+  'pyserial',
   'pyserial-asyncio',
+  'aiofiles',
+  'orjson',
 ]
 
 [project.optional-dependencies]

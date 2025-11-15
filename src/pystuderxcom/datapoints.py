@@ -4,9 +4,7 @@
 # Definition of all parameters / constants used in the Xcom protocol
 ##
 
-import aiofiles
 import logging
-import orjson
 
 from dataclasses import dataclass
 

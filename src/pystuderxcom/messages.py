@@ -7,9 +7,7 @@
 ##   -> Downloads -> software + updates -> communication protocol xcom 232i
 ##
 
-import aiofiles
 import logging
-import orjson
 
 from dataclasses import dataclass
 

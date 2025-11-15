@@ -20,6 +20,9 @@ from .api_base_async import (
     STOP_TIMEOUT,
     REQ_TIMEOUT,
 )
+from .api_base_sync import (
+    XcomApiBase
+)
 from .const import (
     ScomAddress,
     XcomLevel,
@@ -41,6 +44,9 @@ from .data import (
 )
 from .factory_async import (
     AsyncXcomFactory,
+)
+from .factory_sync import (
+    XcomFactory,
 )
 from .families import (
     XcomDeviceFamilies

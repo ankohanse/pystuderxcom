@@ -5,12 +5,14 @@ import pytest
 import pytest_asyncio
 
 from pystuderxcom import AsyncXcomApiUdp, AsyncXcomFactory
+from pystuderxcom import XcomApiUdp, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
 from . import AsyncXcomTestUdp
+from . import XcomTestUdp
 
 
 class TestContext:

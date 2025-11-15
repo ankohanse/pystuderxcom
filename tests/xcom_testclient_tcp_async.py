@@ -6,6 +6,7 @@ import socket
 
 from pystuderxcom import  (
     AsyncXcomFactory,
+    XcomFactory,
     XcomApiTimeoutException,
     XcomApiReadException,
     XcomApiWriteException,

@@ -18,8 +18,14 @@ from .api_base_async import (
     XcomApiTimeoutException,
     XcomApiWriteException,
 )
+from .api_base_sync import (
+    XcomApiBase,
+)
 from .factory_async import (
     AsyncXcomFactory,
+)
+from .factory_sync import (
+    XcomFactory,
 )
 from .protocol import (
     XcomPackage,

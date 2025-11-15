@@ -10,8 +10,10 @@
 
 import asyncio
 import binascii
+import io
 import logging
 import struct
+
 from io import BufferedWriter, BufferedReader, BytesIO
 
 from .const import (
@@ -167,6 +169,7 @@ class XcomHeader:
 
 class XcomPackage():
 
+    max_length = 256 # from Studer Xcom documentation
     start_byte: bytes = b'\xAA'
     delimeters: bytes = b'\x0D\x0A'
     header: XcomHeader
@@ -210,7 +213,7 @@ class XcomPackage():
         buf = BytesIO()
         self.assemble(buf)
         return buf.getvalue()
-
+    
     def isResponse(self) -> bool:
         return (self.frame_data.service_flags & 2) >> 1 == 1
 
