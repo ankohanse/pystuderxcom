@@ -5,6 +5,7 @@ import logging
 import socket
 
 from pystuderxcom import  (
+    AsyncXcomApiTcp,
     AsyncXcomFactory,
     XcomFactory,
     XcomApiTimeoutException,
@@ -26,7 +27,7 @@ REQ_RETRIES = 3
 ##
 ## Class implementing Xcom-LAN TCP network protocol
 ##
-class AsyncXcomTestClientTcp:
+class AsyncXcomTestClientTcp():
 
     def __init__(self, port=DEFAULT_PORT):
         """
@@ -35,7 +36,7 @@ class AsyncXcomTestClientTcp:
         """
         super().__init__()
 
-        self.localPort = port
+        self.port = port
         self._reader = None
         self._writer = None
         self._started = False
@@ -63,9 +64,9 @@ class AsyncXcomTestClientTcp:
         Start the Xcom Client and listening to the Xcom server.
         """
         if not self._started:
-            _LOGGER.info(f"Xcom TCP Test Client connect to port {self.localPort}")
+            _LOGGER.info(f"Xcom TCP Test Client connect to port {self.port}")
 
-            self._reader, self._writer = await asyncio.open_connection("127.0.0.1", self.localPort, limit=1000, family=socket.AF_INET)
+            self._reader, self._writer = await asyncio.open_connection("127.0.0.1", self.port, limit=1000, family=socket.AF_INET)
 
             (self._remote_ip,_) = self._writer.get_extra_info("peername")
             _LOGGER.info(f"Connected to Xcom server '{self._remote_ip}'")
@@ -73,7 +74,7 @@ class AsyncXcomTestClientTcp:
             self._started = True
             self._connected = True
         else:
-            _LOGGER.info(f"Xcom TCP Test Client already listening on port {self.localPort}")
+            _LOGGER.info(f"Xcom TCP Test Client already listening on port {self.port}")
 
 
     async def stop(self):
@@ -113,8 +114,7 @@ class AsyncXcomTestClientTcp:
             try:
                 async with asyncio.timeout(timeout):
                     while True:
-                        request, _ = await AsyncXcomFactory.parse_package(self._reader)
-
+                        request = await AsyncXcomFactory.parse_package(self._reader)
                         if request is not None:
                             _LOGGER.info(f"Xcom TCP Test Client received request package {request}")
                             return request

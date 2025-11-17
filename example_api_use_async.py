@@ -120,7 +120,7 @@ async def main():
             logger.info(f"XT1 {param_1107.nr} updated to {value} {param_1107.unit} ({param_1107.name})")
 
     except Exception as e:
-        logger.info(f"Unexpected exception: {e}")
+        logger.info(f"Unexpected exception: {str(e)}")
 
     finally:
         logger.info(f"")

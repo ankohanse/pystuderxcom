@@ -16,6 +16,8 @@ from pystuderxcom import  (
 )
 import threading
 
+from pystuderxcom.api_tcp import XcomApiTcp
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -29,127 +31,49 @@ REQ_RETRIES = 3
 ##
 ## Class implementing Xcom-LAN TCP network protocol
 ##
-class XcomTestClientTcp:
+class XcomTestClientTcp(XcomApiTcp):
 
-    def __init__(self, port=DEFAULT_PORT):
+    # We mostly have the same behavior as the TCP Server
+    # Except ofcourse that we start as TCP Client, not Server...
+    def start(self, timeout=START_TIMEOUT, wait_for_connect=True) -> bool:
         """
-        MOXA is connecting to the TCP Server we are creating here.
-        Once it is connected we can send package requests.
-        """
-        super().__init__()
-
-        self.localPort = port
-        self._reader = None
-        self._writer = None
-        self._started = False
-        self._connected = False
-        self._remote_ip = None
-
-        self._receivePackageLock = threading.Lock() # to make sure receivePackage is never called concurrently
-        self._sendPackageLock    = threading.Lock() # to make sure sendPackage is never called concurrently
-
-
-    @property
-    def connected(self):
-        """Returns True if the Xcom client is connected, otherwise False"""
-        return self._connected
-
-
-    @property
-    def remote_ip(self) -> str|None:
-        """Returns the IP address of the connected Xcom client, otherwise None"""
-        return self._remote_ip
-
-
-    def start(self, timeout=START_TIMEOUT) -> bool:
-        """
-        Start the Xcom Client and listening to the Xcom server.
+        Start the Xcom Client and connect to the Xcom Server
         """
         if not self._started:
-            _LOGGER.info(f"Xcom TCP Test Client connect to port {self.localPort}")
+            _LOGGER.info(f"Xcom TCP Client connect to port {self.port}")
 
-            self._reader, self._writer = asyncio.open_connection("127.0.0.1", self.localPort, limit=1000, family=socket.AF_INET)
-
-            (self._remote_ip,_) = self._writer.get_extra_info("peername")
-            _LOGGER.info(f"Connected to Xcom server '{self._remote_ip}'")
-
+            self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._connection.connect(("localhost", self.port))
             self._started = True
             self._connected = True
         else:
-            _LOGGER.info(f"Xcom TCP Test Client already listening on port {self.localPort}")
+            _LOGGER.info(f"Xcom TCP Client already connected to port {self.port}")
+        
+        return True    
 
 
     def stop(self):
         """
-        Stop listening to the the Xcom Server and stop the Xcom TCP Test Client
+        Stop connection to the the Xcom Server
         """
-        _LOGGER.info(f"Stopping Xcom TCP Test Client")
+        _LOGGER.info(f"Stopping Xcom TCP Client")
         try:
             self._connected = False
 
-            # Close the writer; we do not need to close the reader
-            if self._writer:
-                self._writer.close()
-                self._writer.wait_closed()
+            if self._connection is not None:
+                self._connection.close()
+                self._connection = None
     
         except Exception as e:
-            _LOGGER.warning(f"Exception during closing of Xcom writer: {e}")
+            _LOGGER.warning(f"Exception during closing of Xcom Client connection: {e}")
 
         self._started = False
         _LOGGER.info(f"Stopped Xcom TCP Test Client")
     
 
-    def receivePackage(self, timeout=REQ_TIMEOUT) -> XcomPackage | None:
-        """
-        Receive an Xcom package from Server to Client
-        Throws:
-            XcomApiWriteException
-            XcomApiReadException
-            XcomApiTimeoutException
-        """
-        if not self._connected:
-            _LOGGER.info(f"receivePackage - not connected")
-            return None
-        
-        with self._receivePackageLock:
-            # Receive a package
-            try:
-                with asyncio.timeout(timeout):
-                    while True:
-                        request, _ = XcomFactory.parse_package(self._reader)
-
-                        if request is not None:
-                            _LOGGER.info(f"Xcom TCP Test Client received request package {request}")
-                            return request
-
-            except asyncio.TimeoutError as te:
-                msg = f"Timeout while listening for request package from Xcom server"
-                raise XcomApiTimeoutException(msg) from None
-
-            except Exception as e:
-                msg = f"Exception while listening for request package from Xcom server: {e}"
-                raise XcomApiReadException(msg) from None
+    def receivePackage(self) -> XcomPackage | None:
+        return super()._receivePackage()
 
 
-    def sendPackage(self, package: XcomPackage, timeout=REQ_TIMEOUT):
-        """
-        Send an Xcom package from Client to Server
-        Throws:
-            XcomApiWriteException
-            XcomApiReadException
-            XcomApiTimeoutException
-        """
-        if not self._connected:
-            _LOGGER.info(f"sendPackage - not connected")
-            return None
-        
-        with self._sendPackageLock:
-            # Send the package to the Xcom server
-            try:
-                _LOGGER.info(f"Xcom TCP Test Client send response package {package}")
-                self._writer.write(package.getBytes())
-                self._writer.drain()
-
-            except Exception as e:
-                msg = f"Exception while sending package to Xcom server: {e}"
-                raise XcomApiWriteException(msg) from None
+    def sendPackage(self, package: XcomPackage):
+        return super()._sendPackage(package)

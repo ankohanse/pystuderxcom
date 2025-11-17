@@ -18,6 +18,13 @@ from .api_base_async import (
 from .api_base_sync import (
     XcomApiBase,
 )
+from .const import (
+    XcomDiscoverNotConnected,
+)
+from .data import (
+    XcomDiscoveredDevice,
+    XcomDiscoveredClient,
+)
 from .datapoints import (
     XcomDatapoint,
     XcomDataset,
@@ -31,32 +38,6 @@ _LOGGER = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("getmac").setLevel(logging.WARNING)
-
-
-class XcomDiscoverNotConnected(Exception):
-    """Exception to indicate that remote xcom client is not connected"""
- 
-
-@dataclass
-class XcomDiscoveredClient:
-    ip: str = None
-    mac: str = None
-    guid: str = None
-
-
-@dataclass
-class XcomDiscoveredDevice:
-    # Base info
-    code: str
-    addr: int
-    family_id: str
-    family_model: str
-
-    # Extended info
-    device_model: str = None
-    hw_version: str = None
-    sw_version: str = None
-    fid: str = None
 
 
 class XcomDiscover:

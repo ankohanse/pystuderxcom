@@ -9,8 +9,33 @@ from enum import IntEnum, StrEnum
 from typing import Iterable
 
 
+class XcomApiWriteException(Exception):
+    """Exception to indicate failure while writing data to the xcom client"""
+    
+class XcomApiReadException(Exception):
+    """Exception to indicate failure while reading data from the xcom client"""
+    
+class XcomApiTimeoutException(Exception):
+    """Exception to indicate a timeout while reading from the xcom client"""
+
+class XcomApiUnpackException(Exception):
+    """Exception to indicate faulure to unpack a response package from the xcom client"""
+
+class XcomApiResponseIsError(Exception):
+    """Exception to indicate an error message was received back from the xcom client"""
+
+class XcomDiscoverNotConnected(Exception):
+    """Exception to indicate that remote xcom client is not connected"""
+
 class XcomParamException(Exception):
     pass
+
+
+START_TIMEOUT = 30 # seconds
+STOP_TIMEOUT = 5
+REQ_TIMEOUT = 3
+REQ_RETRIES = 3
+REQ_BURST_PERIOD = 5 # do burst of requests for 5 seconds, then wait a second, then the next burst
 
 
 class XcomVoltage(StrEnum):

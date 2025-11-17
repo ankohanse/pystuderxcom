@@ -8,14 +8,15 @@
 
 import asyncio
 import binascii
-import io
+from datetime import datetime, timedelta
 import logging
 import orjson
 
 from aiofiles import open as aiofiles_open
-
+from io import BufferedReader
 
 from .const import (
+    REQ_TIMEOUT,
     XcomVoltage
 )
 from .data import (
@@ -104,10 +105,12 @@ class XcomFactory:
 
 
     @staticmethod
-    def parse_package(f: io.BufferedReader, verbose=False) -> XcomPackage:
+    def parse_package(f: BufferedReader, timeout:float=REQ_TIMEOUT, verbose=False) -> XcomPackage:
         # package sometimes starts with 0xff
         skipped = bytearray(b'')
-        while True:
+        ts_end = datetime.now() + timedelta(seconds=timeout)
+
+        while datetime.now() < ts_end:
             sb = readBytes(f, 1)
             if sb == XcomPackage.start_byte:
                 break
@@ -127,22 +130,11 @@ class XcomFactory:
         assert XcomPackage.checksum(f_raw) == f_chk
         frame = XcomFrame.parseBytes(f_raw)
 
-        package = XcomPackage(header, frame)
-
-        data = bytearray(b'')
-        data.extend(sb)
-        data.extend(h_raw)
-        data.extend(h_chk)
-        data.extend(f_raw)
-        data.extend(f_chk)
-
-        return package, data
+        return XcomPackage(header, frame)
 
 
     @staticmethod
-    def parse_package_bytes(buf: bytes, verbose=False) -> XcomPackage:
+    def parse_package_bytes(buf: bytes, timeout:float=REQ_TIMEOUT, verbose=False) -> XcomPackage:
         reader = SyncReader(buf)
-
-        package, _ = XcomFactory.parse_package(reader, verbose)
-        return package
+        return XcomFactory.parse_package(reader, timeout, verbose)
     

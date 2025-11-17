@@ -9,6 +9,7 @@
 
 
 import asyncio
+from dataclasses import dataclass
 import io
 import logging
 import struct
@@ -26,6 +27,28 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 MULTI_INFO_REQ_MAX = 76
+
+
+@dataclass
+class XcomDiscoveredClient:
+    ip: str = None
+    mac: str = None
+    guid: str = None
+
+
+@dataclass
+class XcomDiscoveredDevice:
+    # Base info
+    code: str
+    addr: int
+    family_id: str
+    family_model: str
+
+    # Extended info
+    device_model: str = None
+    hw_version: str = None
+    sw_version: str = None
+    fid: str = None
 
 
 class XcomData:

@@ -3,16 +3,17 @@
 """xcom_api.py: communication api to Studer Xcom via LAN."""
 
 import asyncio
+import binascii
 import logging
 
 from datetime import datetime, timedelta
 
-from pystuderxcom.datapoints import XcomDatapoint
-from pystuderxcom.messages import XcomMessage
-
-
-
 from .const import (
+    START_TIMEOUT,
+    STOP_TIMEOUT,
+    REQ_TIMEOUT,
+    REQ_RETRIES,
+    REQ_BURST_PERIOD,
     ScomAddress,
     XcomFormat,
     XcomCategory,
@@ -21,6 +22,11 @@ from .const import (
     ScomObjId,
     ScomService,
     ScomQspId,
+    XcomApiReadException,
+    XcomApiWriteException,
+    XcomApiUnpackException,
+    XcomApiTimeoutException,
+    XcomApiResponseIsError,
     XcomParamException,
     safe_len,
 )
@@ -28,6 +34,9 @@ from .data import (
     XcomData,
     XcomDataMessageRsp,
     MULTI_INFO_REQ_MAX,
+)
+from .datapoints import (
+    XcomDatapoint,
 )
 from .factory_async import (
     AsyncXcomFactory,
@@ -38,6 +47,9 @@ from .factory_sync import (
 from .families import (
     XcomDeviceFamilies
 )
+from .messages import (
+    XcomMessage,
+)
 from .protocol import (
     XcomPackage,
 )
@@ -45,33 +57,11 @@ from .values import (
     XcomValues,
     XcomValuesItem,
 )
+import threading
 import time
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-START_TIMEOUT = 30 # seconds
-STOP_TIMEOUT = 5
-REQ_TIMEOUT = 3
-REQ_RETRIES = 3
-REQ_BURST_PERIOD = 5 # do burst of requests for 5 seconds, then wait a second, then the next burst
-
-
-class XcomApiWriteException(Exception):
-    """Exception to indicate failure while writing data to the xcom client"""
-    
-class XcomApiReadException(Exception):
-    """Exception to indicate failure while reading data from the xcom client"""
-    
-class XcomApiTimeoutException(Exception):
-    """Exception to indicate a timeout while reading from the xcom client"""
-
-class XcomApiUnpackException(Exception):
-    """Exception to indicate faulure to unpack a response package from the xcom client"""
-
-class XcomApiResponseIsError(Exception):
-    """Exception to indicate an error message was received back from the xcom client"""
 
 
 ##
@@ -87,6 +77,7 @@ class XcomApiBase:
         self._connected = False
         self._remote_ip = None
         self._request_id = 0
+        self._sendRequestLock = threading.Lock() # to make sure _sendRequest_inner is never called concurrently
 
         # Cached values
         self._msg_set = None
@@ -121,6 +112,21 @@ class XcomApiBase:
         """Returns the IP address of the connected Xcom client, otherwise None"""
         return self._remote_ip
     
+
+    def _wait_until_connected(self, timeout) -> bool:
+        """Wait for Xcom client to connect. Or timout."""
+        try:
+            for i in range(timeout):
+                if self._connected:
+                    return True
+                
+                time.sleep(1)
+
+        except Exception as e:
+            _LOGGER.warning(f"Exception while checking connection to Xcom client: {e}")
+
+        return False
+
 
     def requestGuid(self, retries = None, timeout = None, verbose=False):
         """
@@ -445,30 +451,35 @@ class XcomApiBase:
     
         # Sometimes the Xcom client does not seem to pickup a request
         # so retry if needed
+        if not self._connected:
+            _LOGGER.warning(f"_sendRequest - not connected")
+            return None
+        
         last_exception = None
         retries = retries or REQ_RETRIES
         timeout = timeout or REQ_TIMEOUT
 
         for retry in range(retries):
             try:
-                ts_start = datetime.now()
+                with self._sendRequestLock:
+                    ts_start = datetime.now()
 
-                response = self._sendPackage(request, timeout=timeout, verbose=verbose)
+                    response = self._sendRequest_inner(request, timeout=timeout, verbose=verbose)
 
-                # Update diagnostics
-                ts_end = datetime.now()
-                self._addDiagnostics(retries = retry, duration = ts_end-ts_start)
+                    # Update diagnostics
+                    ts_end = datetime.now()
+                    self._addDiagnostics(retries = retry, duration = ts_end-ts_start)
 
-                # Check the response
-                if response is None:
-                    return None
+                    # Check the response
+                    if response is None:
+                        return None
 
-                if response.isError():
-                    raise XcomApiResponseIsError(response.getError())
-                
-                # Success
-                return response
+                    if response.isError():
+                        raise XcomApiResponseIsError(response.getError())
                     
+                    # Success
+                    return response
+                        
             except Exception as e:
                 last_exception = e
 
@@ -479,8 +490,79 @@ class XcomApiBase:
             raise last_exception from None
 
 
-    def _sendPackage(self, request: XcomPackage, timeout=REQ_TIMEOUT, verbose=False) -> XcomPackage | None:
-        """Implemented in derived classes"""
+    def _sendRequest_inner(self, request: XcomPackage, retries = None, timeout = None, verbose=False):
+        """
+        Send a request package to the Xcom client and wait for the correct response package
+        """
+
+        # Send the request package to the Xcom client
+        try:
+            if verbose:
+                data = request.getBytes()
+                _LOGGER.debug(f"send {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {request}")
+
+            self._sendPackage(request)
+
+        except Exception as e:
+            msg = f"Exception while sending request package to Xcom client: {e}"
+            raise XcomApiWriteException(msg) from None
+
+        # Receive packages until we get the one we expect
+        # We implement our own primitive timeout mechanism that
+        # is robust when converted from async to sync via unasyncd tool
+        ts_end = datetime.now() + timedelta(seconds=timeout)
+
+        while datetime.now() < ts_end:
+            try:
+                response = self._receivePackage()
+                
+                if response is None:
+                    continue
+
+                if response.isResponse() and \
+                    response.frame_data.service_id == request.frame_data.service_id and \
+                    response.frame_data.service_data.object_id == request.frame_data.service_data.object_id and \
+                    response.frame_data.service_data.property_id == request.frame_data.service_data.property_id:
+
+                    # Yes, this is the answer to our request
+                    if verbose:
+                        data = response.getBytes()
+                        _LOGGER.debug(f"recv {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {response}")
+
+                    return response
+                else:
+                    # No, not an answer to our request, continue loop for next answer (or timeout)
+                    if verbose:
+                        data = response.getBytes()
+                        _LOGGER.debug(f"skip {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {response}")
+
+            except Exception as e:
+                msg = f"Exception while listening for response package from Xcom client: {e}"
+                raise XcomApiReadException() from None
+
+        # If we reach this point then there was a timeout
+        msg = f"Timeout while listening for response package from Xcom client"
+        raise XcomApiTimeoutException(msg) from None
+
+
+    def _sendPackage(self, package: XcomPackage):
+        """
+        Send an Xcom package.
+        Exception handling is dealed with by the caller.
+        
+        Must be implemented in derived classes.
+        """
+        raise NotImplementedError()
+    
+
+    def _receivePackage(self) -> XcomPackage | None:
+        """
+        Attempt to receive an Xcom package. 
+        Return None of nothing was received within REQ_TIMEOUT.
+        Exception handling is dealed with by the caller.
+        
+        Must be implemented in derived classes.
+        """
         raise NotImplementedError()
     
 
