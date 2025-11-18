@@ -32,7 +32,6 @@ MULTI_INFO_REQ_MAX = 76
 @dataclass
 class XcomDiscoveredClient:
     ip: str = None
-    mac: str = None
     guid: str = None
 
 

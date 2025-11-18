@@ -186,17 +186,17 @@ def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_model, ex
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("context", "unused_tcp_port")
 @pytest.mark.parametrize(
-    "name, rsp_dest, rsp_dict, exp_ip, exp_mac, exp_guid",
+    "name, rsp_dest, rsp_dict, exp_ip, exp_guid",
     [
         ("guid none",   [501], {
                             "5002": XcomData.pack("137aef81-08b7-4e70-ad89-0dad0563d627", XcomFormat.GUID),    
-                    }, "127.0.0.1", "00:00:00:00:00:00", None),
+                    }, "127.0.0.1", None),
         ("guid ok",     [501], {
                             "0": XcomData.pack("137aef81-08b7-4e70-ad89-0dad0563d627", XcomFormat.GUID),    
-                    }, "127.0.0.1", "00:00:00:00:00:00", "137aef81-08b7-4e70-ad89-0dad0563d627"),
+                    }, "127.0.0.1", "137aef81-08b7-4e70-ad89-0dad0563d627"),
     ]        
 )
-def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_mac, exp_guid, request):
+def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_guid, request):
     # Create discover instance
     context = request.getfixturevalue("context")
     context.start_discover(rsp_dest, rsp_dict)
@@ -207,5 +207,4 @@ def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_mac, exp_guid, request
     # Check discovered info
     assert client_info is not None
     assert client_info.ip == exp_ip
-    assert client_info.mac == exp_mac
     assert client_info.guid == exp_guid

@@ -10,7 +10,6 @@ import os
 import struct
 
 from dataclasses import dataclass
-from getmac import get_mac_address
 
 from .api_base_async import (
     AsyncXcomApiBase,
@@ -37,7 +36,6 @@ from .families import (
 _LOGGER = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("getmac").setLevel(logging.WARNING)
 
 
 class XcomDiscover:
@@ -203,18 +201,12 @@ class XcomDiscover:
 
         _LOGGER.info(f"Trying to get client info")
         client_ip = None
-        client_mac = None
         client_guid = None
 
         try:
-            ip = ipaddress.ip_address(self._api.remote_ip)
+            client_ip = str(ipaddress.ip_address(self._api.remote_ip))
 
-            client_ip = str(ip)
-            match ip.version:
-                case 4: client_mac = get_mac_address(ip=client_ip)
-                case 6: client_mac = get_mac_address(ip6=client_ip)
-
-            _LOGGER.info(f"  Found ip: {client_ip}, mac: {client_mac}")
+            _LOGGER.info(f"  Found ip: {client_ip}")
 
         except Exception as e:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")
@@ -229,7 +221,6 @@ class XcomDiscover:
 
         return XcomDiscoveredClient(
             ip = client_ip,
-            mac = client_mac,
             guid = client_guid,
         )
 
