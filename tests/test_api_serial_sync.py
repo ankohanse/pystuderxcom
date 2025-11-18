@@ -13,7 +13,6 @@ from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncXcomTestClientTcp, XcomTestClientTcp
 from . import AsyncTaskHelper, TaskHelper
 import time
 
@@ -112,15 +111,17 @@ def test_connect(name, start_local, start_remote, local_port, remote_port, exp_l
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("context", "package_read_info")
 @pytest.mark.parametrize(
-    "name, local_port, remote_port, exp_data",
+    "name, exp_data",
     [
-        ("receive ok",      "COM2", "COM3", True),
-        ("receive timeout", "COM2", "COM3", False),
+        ("receive ok",      True),
+        ("receive timeout", False),
     ]
 )
-def test_send_receive_package(name, local_port, remote_port, exp_data, request):
+def test_send_receive_package(name, exp_data, request):
     context = request.getfixturevalue("context")
     package = request.getfixturevalue("package_read_info")
+    local_port   = "COM2"
+    remote_port  = "COM3"
 
     task_local = TaskHelper(context.start_local, local_port).start()
     task_remote = TaskHelper(context.start_remote, remote_port).start()

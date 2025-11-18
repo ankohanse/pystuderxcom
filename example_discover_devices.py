@@ -5,8 +5,9 @@ from dataclasses import asdict
 import logging
 import sys
 
-from pystuderxcom import AsyncXcomApiTcp, AsyncXcomDiscover, AsyncXcomFactory
-from pystuderxcom import XcomApiTcp, XcomDiscover, XcomFactory
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp
+from pystuderxcom import AsyncXcomDiscover, XcomDiscover
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomVoltage
 
 # Setup logging to StdOut

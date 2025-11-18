@@ -43,5 +43,6 @@ exclude = [
     "CALL_CONTEXT_ASYNC" = "CALL_CONTEXT_SYNC"
     "pytest_asyncio" = "pytest"
     "AsyncTaskHelper" = "TaskHelper"
-    "AsyncXcomTestClientTcp" = "XcomTestClientTcp"
+    "AsyncTestApi" = "TestApi"
+    "AsyncTestClientTcp" = "TestClientTcp"
 

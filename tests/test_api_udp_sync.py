@@ -13,7 +13,6 @@ from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncXcomTestClientTcp, XcomTestClientTcp
 from . import AsyncTaskHelper, TaskHelper
 
 
@@ -139,8 +138,8 @@ def test_send_receive_package(name, exp_data, request):
 
     # Perform a receive to local from remote
     if exp_data:
-        task_local = TaskHelper(context.local._receivePackage).start()
         task_remote = TaskHelper(context.remote._sendPackage, package).start()
+        task_local = TaskHelper(context.local._receivePackage).start()
         
         rsp_package = task_local.join()
         task_remote.join()

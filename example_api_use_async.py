@@ -2,8 +2,8 @@ import asyncio
 import logging
 import sys
 
-from pystuderxcom import AsyncXcomApiTcp, AsyncXcomFactory
-from pystuderxcom import XcomApiTcp, XcomFactory
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 

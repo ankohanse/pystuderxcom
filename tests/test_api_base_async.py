@@ -11,43 +11,9 @@ from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncXcomTestClientTcp, XcomTestClientTcp
+from . import AsyncTestApi, TestApi
+from . import AsyncTestClientTcp, TestClientTcp
 from . import AsyncTaskHelper, TaskHelper
-
-
-
-class AsyncTestApi(AsyncXcomApiBase):
-    """
-    Derived class to help test the parent class
-    """
-    def __init__(self, on_send_handler=None, on_receive_handler=None):
-        super().__init__()
-        self._on_send = on_send_handler
-        self._on_receive = on_receive_handler
-
-        # Simulate we have connected
-        self._connected = True  
-        self._remote_ip = "127.0.0.1"  
-    
-        # Internal variables to keep track of what happened during the test
-        self.send_called: bool = False
-        self.receive_called: bool = False
-        self.request_package: XcomPackage = None
-        self.response_package: XcomPackage = None
-
-    async def _sendPackage(self, package: XcomPackage):
-        self.send_called = True
-        self.request_package = package
-
-        if self._on_send:
-            await self._on_send(self)
-
-    async def _receivePackage(self) -> XcomPackage | None:
-        if self._on_receive:
-            await self._on_receive(self)
-
-        self.receive_called = True
-        return self.response_package
 
 
 @pytest.mark.asyncio

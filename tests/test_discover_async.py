@@ -4,84 +4,53 @@ import threading
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import AsyncXcomDiscover, AsyncXcomApiTcp, AsyncXcomFactory
-from pystuderxcom import XcomDiscover, XcomApiTcp, XcomFactory
+from pystuderxcom import AsyncXcomDiscover, XcomDiscover
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
 from pystuderxcom import XcomVoltage, XcomFormat, ScomService, ScomObjType, ScomQspId, ScomErrorCode
-from . import AsyncXcomTestClientTcp
+from . import AsyncTestApi, TestApi
 
 
-class TestContext:
-    __test__ = False  # Prevent pytest from collecting this class
-    
+async def on_receive(api: AsyncTestApi):
+    """Helper to turn a request into a response"""
+    req: XcomPackage = api.request_package
+    if req:
+        if req.header.dst_addr not in api.rsp_dest:
+            flags = 0x03
+            data = XcomData.pack(ScomErrorCode.DEVICE_NOT_FOUND, XcomFormat.ERROR)
+
+        elif str(req.frame_data.service_data.object_id) not in api.rsp_dict:
+            flags = 0x03
+            data = XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR)
+
+        else:
+            flags = 0x02
+            data = api.rsp_dict[str(req.frame_data.service_data.object_id)]
+
+        api.response_package = copy.deepcopy(api.request_package)
+        api.response_package.frame_data.service_flags = flags
+        api.response_package.frame_data.service_data.property_data = data
+        api.response_package.header.data_length = len(api.response_package.frame_data)
+
+
+class TestContext():
+
     def __init__(self):
+        self.dataset = None
+        self.api = None
         self.discover = None
-        self.server = None
-        self.client = None
-        self.client_stop = threading.Event()
 
-    async def start_discover(self, dataset):
-        self.discover = AsyncXcomDiscover(self.server, dataset)
+    async def start_discover(self, rsp_dest, rsp_dict):
+        self.dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+        self.api = AsyncTestApi(on_receive_handler=on_receive, rsp_dest=rsp_dest, rsp_dict=rsp_dict)
+    
+        self.discover = AsyncXcomDiscover(self.api, self.dataset)    
 
     async def stop_discover(self):
+        self.api = None
+        self.dataset = None
         self.discover = None
-
-    async def start_server(self, port):
-        if not self.server:
-            self.server = AsyncXcomApiTcp(port)
-
-        await self.server.start(wait_for_connect = False)
-
-    async def stop_server(self):
-        if self.server:
-            await self.server.stop()
-        self.server = None
-
-    async def start_client(self, port):
-        if not self.client:
-            self.client = AsyncXcomTestClientTcp(port)
-
-        await self.client.start()
-
-    async def stop_client(self):
-        if self.client:
-            if not self.client_stop.is_set():
-                self.client_stop.set()
-                await asyncio.sleep(5)
-
-            await self.client.stop()
-        self.client = None
-
-    # Helper function for client to handle a request and submit a response
-    async def clientHandler(self, rsp_dest, rsp_dict):
-        while not self.client_stop.is_set():
-            # Receive the request from the server
-            try:
-                req: XcomPackage = await self.client.receivePackage()
-                if req:
-                    # Make a deep copy of the request and turn it into a response
-                    if req.header.dst_addr not in rsp_dest:
-                       flags = 0x03
-                       data = XcomData.pack(ScomErrorCode.DEVICE_NOT_FOUND, XcomFormat.ERROR)
-
-                    elif str(req.frame_data.service_data.object_id) not in rsp_dict:
-                        flags = 0x03
-                        data = XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR)
-
-                    else:
-                        flags = 0x02
-                        data = rsp_dict[str(req.frame_data.service_data.object_id)]
-
-                    rsp = copy.deepcopy(req)
-                    rsp.frame_data.service_flags = flags
-                    rsp.frame_data.service_data.property_data = data
-                    rsp.header.data_length = len(rsp.frame_data)
-
-                    # Send the response back to the server
-                    await self.client.sendPackage(rsp)
-            except XcomApiTimeoutException:
-                pass
 
 
 @pytest_asyncio.fixture
@@ -94,12 +63,10 @@ async def context():
 
     # cleanup
     await ctx.stop_discover()
-    await ctx.stop_client()
-    await ctx.stop_server()
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("context", "unused_tcp_port")
+@pytest.mark.usefixtures("context")
 @pytest.mark.parametrize(
     "name, rsp_dest, rsp_dict, exp_devices",
     [
@@ -118,34 +85,12 @@ async def context():
     ]
 )
 async def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
+    # Create discover instance
     context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
+    await context.start_discover(rsp_dest, rsp_dict)
 
-    # The order of start is important, first discover server, then client
-    await context.start_server(port)
-    await context.start_client(port)
-    
-    await context.server._waitConnected(5)
-    assert context.server.connected == True
-    assert context.client.connected == True
-
-    # Once the server is started, we can use it to create the discovery helper
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
-    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
-
-    # Start 2 parallel tasks, for server and for client
-    task_discover = asyncio.create_task(discover.discoverDevices(getExtendedInfo=False))
-    task_client = asyncio.create_task(context.clientHandler(rsp_dest, rsp_dict))
-
-    # wait for discover to finish
-    devices = await task_discover
-    discover = None
-    dataset = None
-
-    # Wait for client to finish
-    context.client_stop.set()
-    await asyncio.sleep(5)
-    await task_client
+    # Perform the discover
+    devices = await context.discover.discoverDevices(getExtendedInfo=False)
 
     # Check discovered devices
     assert len(devices) == len(exp_devices)
@@ -218,34 +163,12 @@ async def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
     ]
 )
 async def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_model, exp_hw_version, exp_sw_version, exp_fid, request):
+    # Create discover instance
     context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
+    await context.start_discover(rsp_dest, rsp_dict)
 
-    # The order of start is important, first discover server, then client
-    await context.start_server(port)
-    await context.start_client(port)
-
-    await context.server._waitConnected(5)
-    assert context.server.connected == True
-    assert context.client.connected == True
-
-    # Once the server is started, we can use it to create the discovery helper
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
-    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
-
-    # Start 2 parallel tasks, for server and for client
-    task_discover = asyncio.create_task(discover.discoverDevices(getExtendedInfo=True))
-    task_client = asyncio.create_task(context.clientHandler(rsp_dest, rsp_dict))
-
-    # wait for discover to finish
-    devices = await task_discover
-    discover = None
-    dataset = None
-
-    # Wait for client to finish
-    context.client_stop.set()
-    await asyncio.sleep(5)
-    await task_client
+    # Perform the discover
+    devices = await context.discover.discoverDevices(getExtendedInfo=True)
 
     # Check discovered devices
     assert len(devices) == 1
@@ -272,29 +195,12 @@ async def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_mod
     ]        
 )
 async def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_mac, exp_guid, request):
+    # Create discover instance
     context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
+    await context.start_discover(rsp_dest, rsp_dict)
 
-    # The order of start is important, first discover server, then client
-    await context.start_server(port)
-    await context.start_client(port)
-
-    await context.server._waitConnected(5)
-    assert context.server.connected == True
-    assert context.client.connected == True
-
-    # Once the server is started, we can use it to create the discovery helper
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
-    discover = AsyncXcomDiscover(api=context.server, dataset=dataset)
-
-    # Start 2 parallel tasks, for server and for client
-    task_discover = asyncio.create_task(discover.discoverClientInfo())
-    task_client = asyncio.create_task(context.clientHandler(rsp_dest, rsp_dict))
-    
-    # wait for discover to finish
-    client_info = await task_discover
-    discover = None
-    dataset = None
+    # Perform the discover
+    client_info = await context.discover.discoverClientInfo()
 
     # Check discovered info
     assert client_info is not None

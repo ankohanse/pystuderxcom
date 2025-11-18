@@ -5,9 +5,8 @@ import logging
 import socket
 
 from pystuderxcom import  (
-    AsyncXcomApiTcp,
-    AsyncXcomFactory,
-    XcomFactory,
+    AsyncXcomApiTcp, XcomApiTcp,
+    AsyncXcomFactory, XcomFactory,
     XcomApiTimeoutException,
     XcomApiReadException,
     XcomApiWriteException,
@@ -27,7 +26,7 @@ REQ_RETRIES = 3
 ##
 ## Class implementing Xcom-LAN TCP network protocol
 ##
-class AsyncXcomTestClientTcp():
+class AsyncTestClientTcp():
 
     def __init__(self, port=DEFAULT_PORT):
         """
@@ -150,3 +149,55 @@ class AsyncXcomTestClientTcp():
             except Exception as e:
                 msg = f"Exception while sending package to Xcom server: {e}"
                 raise XcomApiWriteException(msg) from None
+
+
+
+##
+## Class implementing Xcom-LAN TCP network protocol
+##
+class TestClientTcp(XcomApiTcp):
+
+    # We mostly have the same behavior as the TCP Server
+    # Except ofcourse that we start as TCP Client, not Server...
+    def start(self, timeout=START_TIMEOUT, wait_for_connect=True) -> bool:
+        """
+        Start the Xcom Client and connect to the Xcom Server
+        """
+        if not self._started:
+            _LOGGER.info(f"Xcom TCP Client connect to port {self.port}")
+
+            self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._connection.connect(("localhost", self.port))
+            self._started = True
+            self._connected = True
+        else:
+            _LOGGER.info(f"Xcom TCP Client already connected to port {self.port}")
+        
+        return True    
+
+
+    def stop(self):
+        """
+        Stop connection to the the Xcom Server
+        """
+        _LOGGER.info(f"Stopping Xcom TCP Client")
+        try:
+            self._connected = False
+
+            if self._connection is not None:
+                self._connection.close()
+                self._connection = None
+    
+        except Exception as e:
+            _LOGGER.warning(f"Exception during closing of Xcom Client connection: {e}")
+
+        self._started = False
+        _LOGGER.info(f"Stopped Xcom TCP Test Client")
+    
+
+    def receivePackage(self) -> XcomPackage | None:
+        return super()._receivePackage()
+
+
+    def sendPackage(self, package: XcomPackage):
+        return super()._sendPackage(package)

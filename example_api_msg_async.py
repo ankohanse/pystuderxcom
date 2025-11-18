@@ -3,7 +3,8 @@ from datetime import datetime
 import logging
 import sys
 
-from pystuderxcom import AsyncXcomApiTcp, XcomData, XcomValues, XcomValuesItem
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp
+from pystuderxcom import XcomData, XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
 
 # Setup logging to StdOut

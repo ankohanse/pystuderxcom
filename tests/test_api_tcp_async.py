@@ -4,14 +4,14 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import AsyncXcomApiTcp, AsyncXcomFactory
-from pystuderxcom import XcomApiTcp, XcomFactory
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp 
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncXcomTestClientTcp, XcomTestClientTcp
+from . import AsyncTestClientTcp, TestClientTcp
 from . import AsyncTaskHelper, TaskHelper
 
 
@@ -35,7 +35,7 @@ class TestContext:
 
     async def start_client(self, port):
         if not self.client:
-            self.client = AsyncXcomTestClientTcp(port)
+            self.client = AsyncTestClientTcp(port)
 
         await self.client.start()
 

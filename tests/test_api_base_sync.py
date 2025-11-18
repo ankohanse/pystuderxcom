@@ -13,43 +13,9 @@ from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncXcomTestClientTcp, XcomTestClientTcp
+from . import AsyncTestApi, TestApi
+from . import AsyncTestClientTcp, TestClientTcp
 from . import AsyncTaskHelper, TaskHelper
-
-
-
-class AsyncTestApi(XcomApiBase):
-    """
-    Derived class to help test the parent class
-    """
-    def __init__(self, on_send_handler=None, on_receive_handler=None):
-        super().__init__()
-        self._on_send = on_send_handler
-        self._on_receive = on_receive_handler
-
-        # Simulate we have connected
-        self._connected = True  
-        self._remote_ip = "127.0.0.1"  
-    
-        # Internal variables to keep track of what happened during the test
-        self.send_called: bool = False
-        self.receive_called: bool = False
-        self.request_package: XcomPackage = None
-        self.response_package: XcomPackage = None
-
-    def _sendPackage(self, package: XcomPackage):
-        self.send_called = True
-        self.request_package = package
-
-        if self._on_send:
-            self._on_send(self)
-
-    def _receivePackage(self) -> XcomPackage | None:
-        if self._on_receive:
-            self._on_receive(self)
-
-        self.receive_called = True
-        return self.response_package
 
 
 @pytest.mark.asyncio
@@ -63,7 +29,7 @@ class AsyncTestApi(XcomApiBase):
 )
 def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         api.response_package = copy.deepcopy(api.request_package)
 
@@ -72,7 +38,7 @@ def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, e
         api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         value = api.requestGuid(retries=1, timeout=5)
@@ -115,7 +81,7 @@ def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_ob
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         api.response_package = copy.deepcopy(api.request_package)
 
@@ -124,7 +90,7 @@ def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_ob
         api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         value = api.requestValue(param, test_dest, retries=1, timeout=5)
@@ -166,7 +132,7 @@ def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_addr, 
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
     param = dataset.getByNr(test_nr)
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         api.response_package = copy.deepcopy(api.request_package)
 
@@ -175,7 +141,7 @@ def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_addr, 
         api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         value = api.updateValue(param, test_value_update, test_dest, retries=1, timeout=5)
@@ -322,7 +288,7 @@ def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp_dst_a
 
     req_data, exp_rsp_multi, _ = request.getfixturevalue(values_fixture)
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         if not run_receive:
             api.response_package = None
@@ -338,7 +304,7 @@ def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp_dst_a
             api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         rsp_data = api.requestInfos(req_data, retries=1, timeout=5)
@@ -397,7 +363,7 @@ def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_value, 
     
     req_data, exp_rsp_multi, exp_rsp_single_val = request.getfixturevalue(values_fixture)
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         if not run_receive:
             api.response_package = None
@@ -417,7 +383,7 @@ def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_value, 
             api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         rsp_data = api.requestValues(req_data, retries=1, timeout=5)
@@ -477,7 +443,7 @@ def test_requestMessage(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp
         rsp_data = request.getfixturevalue(rsp_data)
         rsp_data = rsp_data.pack()
 
-    def on_receive(api: AsyncTestApi):
+    def on_receive(api: TestApi):
         """Helper to turn a request into a response"""
         api.response_package = copy.deepcopy(api.request_package)
 
@@ -486,7 +452,7 @@ def test_requestMessage(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp
         api.response_package.header.data_length = len(api.response_package.frame_data)
 
     # Run the request
-    api = AsyncTestApi(on_receive_handler=on_receive)
+    api = TestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
         msg = api.requestMessage(test_nr, retries=1, timeout=5)

@@ -1,4 +1,4 @@
-from .xcom_testclient_tcp_async import AsyncXcomTestClientTcp
-from .xcom_testclient_tcp_sync import XcomTestClientTcp
+from .xcom_test_api import AsyncTestApi, TestApi
+from .xcom_test_client_tcp import AsyncTestClientTcp, TestClientTcp
 
 from .tasks import AsyncTaskHelper, TaskHelper
