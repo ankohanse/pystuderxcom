@@ -5,10 +5,11 @@ from dataclasses import asdict
 import logging
 import sys
 
-from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import AsyncXcomDiscover, XcomDiscover
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomVoltage
+from helper import RunHelper
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -16,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # Discover all Xcom devices
-    api     = XcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
+    api = XcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)    # port number configured in Xcom-LAN/Moxa NPort
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
 
     try:
@@ -49,4 +49,4 @@ def main():
         dataset = None
 
 
-asyncio.run(main())  # main loop
+RunHelper.run(main)  # main loop

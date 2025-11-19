@@ -14,7 +14,6 @@ from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
 from . import AsyncTestApi, TestApi
-from . import AsyncTestClientTcp, TestClientTcp
 from . import AsyncTaskHelper, TaskHelper
 
 

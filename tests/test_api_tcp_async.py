@@ -4,14 +4,13 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp 
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from . import AsyncTestClientTcp, TestClientTcp
 from . import AsyncTaskHelper, TaskHelper
 
 
@@ -22,9 +21,9 @@ class TestContext:
         self.server = None
         self.client = None
 
-    async def start_server(self, port):
+    async def start_server(self, listen_port):
         if not self.server:
-            self.server = AsyncXcomApiTcp(port)
+            self.server = AsyncXcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=listen_port)
 
         await self.server.start(wait_for_connect = False)
 
@@ -33,9 +32,9 @@ class TestContext:
             await self.server.stop()
         self.server = None
 
-    async def start_client(self, port):
+    async def start_client(self, remote_ip, remote_port):
         if not self.client:
-            self.client = AsyncTestClientTcp(port)
+            self.client = AsyncXcomApiTcp(mode=XcomApiTcpMode.CLIENT, remote_ip=remote_ip, remote_port=remote_port)
 
         await self.client.start()
 
@@ -76,21 +75,22 @@ async def package_read_info():
 @pytest.mark.parametrize(
     "name, start_server, start_client, exp_server_conn, exp_client_conn, exp_server_ip, exp_client_ip",
     [
-        ("connect no start", False, False, False, False, None, None),
-        ("connect timeout",  True,  False, False, False, None, None),
         ("connect ok",       True,  True,  True,  True,  "127.0.0.1", "127.0.0.1"),
+        ("connect timeout",  True,  False, False, False, None, None),
+        ("connect no start", False, False, False, False, None, None),
     ]
 )
 async def test_connect(name, start_server, start_client, exp_server_conn, exp_client_conn, exp_server_ip, exp_client_ip, request):
 
-    context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
+    context     = request.getfixturevalue("context")
+    server_port = request.getfixturevalue("unused_tcp_port")
+    server_ip   = "127.0.0.1"
 
     assert context.server is None
     assert context.client is None
 
-    task_server = await AsyncTaskHelper(context.start_server, port).start() if start_server else None
-    task_client = await AsyncTaskHelper(context.start_client, port).start() if start_client else None
+    task_server = await AsyncTaskHelper(context.start_server, server_port).start() if start_server else None
+    task_client = await AsyncTaskHelper(context.start_client, server_ip, server_port).start() if start_client else None
 
     if task_server is not None:
         await task_server.join()
@@ -99,57 +99,11 @@ async def test_connect(name, start_server, start_client, exp_server_conn, exp_cl
     if task_client is not None:
         await task_client.join()
         assert context.client is not None
+        assert context.client.connected == exp_client_conn
 
     assert context.server is None or context.server.connected == exp_server_conn
-    assert context.client is None or context.client.connected == exp_client_conn
-
     assert context.server is None or context.server.remote_ip == exp_server_ip
 
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("context", "unused_tcp_port", "package_read_info")
-@pytest.mark.parametrize(
-    "name, exp_except",
-    [
-        ("send ok",      None),
-        #("send timeout", XcomApiTimeoutException),
-    ]
-)
-async def test_sendPackage(name, exp_except, request):
-    context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
-    package = request.getfixturevalue("package_read_info")
-
-    # The order of start is important, first server, then client.
-    task_server = await AsyncTaskHelper(context.start_server, port).start()
-    task_client = await AsyncTaskHelper(context.start_client, port).start()
-
-    await task_server.join()
-    await task_client.join()
-
-    assert context.server.connected == True
-    assert context.client.connected == True
-
-    # Perform a send from server to client
-    if exp_except == None:
-        task_client = await AsyncTaskHelper(context.client.receivePackage).start()
-        task_server = await AsyncTaskHelper(context.server._sendPackage, package).start()
-        
-        await task_server.join()
-        rsp_package = await task_client.join()
-
-        assert rsp_package is not None
-        assert rsp_package.header.src_addr == package.header.src_addr
-        assert rsp_package.header.dst_addr == package.header.dst_addr
-        assert rsp_package.frame_data.service_id == package.frame_data.service_id
-        assert rsp_package.frame_data.service_data.object_type == package.frame_data.service_data.object_type
-        assert rsp_package.frame_data.service_data.object_id == package.frame_data.service_data.object_id
-        assert rsp_package.frame_data.service_data.property_id == package.frame_data.service_data.property_id
-
-    else:
-        with pytest.raises(exp_except):
-            task_server = await AsyncTaskHelper(context.server._sendPackage, package).start()
-            await task_server.join()
 
 
 @pytest.mark.asyncio
@@ -161,14 +115,14 @@ async def test_sendPackage(name, exp_except, request):
         ("receive timeout", False),
     ]
 )
-async def test_receivePackage(name, exp_data, request):
+async def test_send_receive(name, exp_data, request):
     context = request.getfixturevalue("context")
-    port    = request.getfixturevalue("unused_tcp_port")
     package = request.getfixturevalue("package_read_info")
+    server_port = request.getfixturevalue("unused_tcp_port")
+    server_ip   = "127.0.0.1"
 
-    # The order of start is important, first server, then client.
-    task_server = await AsyncTaskHelper(context.start_server, port).start()
-    task_client = await AsyncTaskHelper(context.start_client, port).start()
+    task_server = await AsyncTaskHelper(context.start_server, server_port).start()
+    task_client = await AsyncTaskHelper(context.start_client, server_ip, server_port).start()
 
     await task_server.join()
     await task_client.join()
@@ -176,9 +130,9 @@ async def test_receivePackage(name, exp_data, request):
     assert context.server.connected == True
     assert context.client.connected == True
 
-    # Perform a receive to server from client
+    # Perform a receive from client to server
     if exp_data:
-        task_client = await AsyncTaskHelper(context.client.sendPackage, package).start()
+        task_client = await AsyncTaskHelper(context.client._sendPackage, package).start()
         task_server = await AsyncTaskHelper(context.server._receivePackage).start()
         
         rsp_package = await task_server.join()

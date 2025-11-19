@@ -57,8 +57,8 @@ from .values import (
     XcomValues,
     XcomValuesItem,
 )
-import threading
 import time
+import threading
 
 
 _LOGGER = logging.getLogger(__name__)

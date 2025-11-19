@@ -38,7 +38,6 @@ from .const import (
     ScomQspId,
     ScomErrorCode,
     XcomParamException,
-    safe_len,
 )
 from .data import (
     XcomData,

@@ -32,6 +32,7 @@ from .datapoints import (
 from .families import (
     XcomDeviceFamilies
 )
+import concurrent.futures
 
 _LOGGER = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -262,24 +263,18 @@ class XcomDiscover:
                 else:
                     return None
             except:
-                pass
+                return None
 
         # Parallel check for Moxa Web Config page on all found device url's
         # No need to SSL verify plain HTTP GET calls, this also keeps Home Assistant happy
         with httpx.Client(verify=False) as client:
-            tasks = [asyncio.create_task(check_url(client, url)) for url in urls]
-            for task in asyncio.as_completed(tasks):
-                try:
-                    url = task
-                    if url is not None:
-                        # Cleanup remaining tasks and return found url
-                        for other_task in tasks:
-                            other_task.cancel()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                 tasks = [executor.submit(check_url, client, url) for url in urls]
 
-                        _LOGGER.info(f"Found Moxa Web Config url: {url}")
-                        return url
-                except:
-                    pass
-                
+            for task in concurrent.futures.as_completed(tasks):
+                url = task.result() if hasattr(task, 'result') and callable(task.result) else task
+                if url is not None:
+                    return url
+                     
         return None
         

@@ -21,6 +21,7 @@ exclude = [
     "tests/test_messageset_async.py" = "tests/test_messageset_sync.py"
     "tests/test_package_async.py" = "tests/test_package_sync.py"
     "example_api_msg_async.py" = "example_api_msg.py"
+    "example_api_use_async.py" = "example_api_use.py"
     "example_discover_devices_async.py" = "example_discover_devices.py"
     "example_discover_moxa_async.py" = "example_discover_moxa.py"
     "example_menu_async.py" = "example_menu.py"
@@ -44,5 +45,5 @@ exclude = [
     "pytest_asyncio" = "pytest"
     "AsyncTaskHelper" = "TaskHelper"
     "AsyncTestApi" = "TestApi"
-    "AsyncTestClientTcp" = "TestClientTcp"
+    "asyncio.as_completed" = "concurrent.futures.as_completed"
 

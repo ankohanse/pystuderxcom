@@ -38,6 +38,11 @@ REQ_RETRIES = 3
 REQ_BURST_PERIOD = 5 # do burst of requests for 5 seconds, then wait a second, then the next burst
 
 
+class XcomApiTcpMode(StrEnum):
+    SERVER = "server"
+    CLIENT = "client"
+
+
 class XcomVoltage(StrEnum):
     AC120 = "120 Vac"
     AC240 = "240 Vac"

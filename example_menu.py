@@ -7,6 +7,7 @@ import sys
 from pystuderxcom import AsyncXcomFactory
 from pystuderxcom import XcomFactory
 from pystuderxcom import XcomVoltage, XcomFormat
+from helper import RunHelper
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -30,4 +31,4 @@ def main():
     dataset = None  # Release memory of the dataset
 
 
-asyncio.run(main())  # main loop
+RunHelper.run(main)  # main loop

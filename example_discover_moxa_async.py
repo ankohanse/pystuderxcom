@@ -4,7 +4,8 @@ import sys
 
 from datetime import datetime
 
-from pystuderxcom import AsyncXcomDiscover
+from pystuderxcom import AsyncXcomDiscover, XcomDiscover
+from helper import RunHelper
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -21,4 +22,4 @@ async def main():
         logger.info(f"Moxa NPort Web Config not found")
 
 
-asyncio.run(main())  # main loop
+RunHelper.run(main)  # main loop

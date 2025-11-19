@@ -25,18 +25,18 @@ from .const import (
     START_TIMEOUT,
     STOP_TIMEOUT,
     REQ_TIMEOUT,
-    ScomAddress,
+    XcomApiTcpMode,
     XcomLevel,
     XcomFormat,
     XcomCategory,
     XcomAggregationType,
+    ScomAddress,
     ScomObjType,
     ScomObjId,
     ScomService,
     ScomQspId,
     ScomErrorCode,
     XcomParamException,
-    safe_len,
 )
 from .data import (
     XcomData,
@@ -75,34 +75,82 @@ DEFAULT_PORT = 4001
 ##
 class AsyncXcomApiTcp(AsyncXcomApiBase):
 
-    def __init__(self, port=DEFAULT_PORT):
+    def __init__(self, mode:XcomApiTcpMode=XcomApiTcpMode.SERVER, listen_port=DEFAULT_PORT, remote_ip:str=None, remote_port:int=None):
         """
-        MOXA is connecting to the TCP Server we are creating here.
-        Once it is connected we can send package requests.
+        Usage: AsyncXcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=port)
+        or:    AsyncXcomApiTcp(mode=XcomApiTcpMode.CLIENT, remote_ip=ip, remote_port=port)
+        
+        In Server mode, MOXA needs to be running as TCP Client and will be connecting to the TCP Server we are creating here.
+        In Client mode, MOXA needs to be running as TCP Server and will listen for a connection from the TCP client we are creating here.
+
+        In both cases, once connected we can send package requests.
         """
         super().__init__()
 
-        self.port: int = port
+        # Sanity check
+        match mode:
+            case XcomApiTcpMode.CLIENT:
+                if remote_ip is None: raise XcomParamException("Parameter 'remote_ip' was not specified")
+                if remote_port is None: raise XcomParamException("Parameter 'remote_port' was not specified")
+            case XcomApiTcpMode.SERVER:
+                if listen_port is None: raise XcomParamException("Parameter 'listen_port' was not specified")
+            case _:
+                raise XcomParamException(f"Parameter 'mode' has an incorrect value '{mode}'")
+
+        # Remember our parameters
+        self._mode: XcomApiTcpMode = mode
+        self._listen_port: int = listen_port    # Only applicable if mode=SERVER
+        self._remote_ip = remote_ip      # Only applicable if mode=CLIENT
+        self._remote_port = remote_port  # Only applicable if mode=CLIENT
+
+        # Internal administration
         self._server: asyncio.Server = None
+        self._connection: socket.socket = None
         self._reader: asyncio.StreamReader = None
         self._writer: asyncio.StreamWriter = None
         self._started: bool = False
         self._connected: bool = False
-        self._remote_ip: str = None
 
 
     async def start(self, timeout=START_TIMEOUT, wait_for_connect=True) -> bool:
         """
-        Start the Xcom Server and listening to the Xcom client.
+        Start the Xcom Server or Client
         """
-        if not self._started:
-            _LOGGER.info(f"Xcom TCP server start listening on port {self.port}")
+        match self._mode:
+            case XcomApiTcpMode.CLIENT: return await self._start_client(timeout)
+            case XcomApiTcpMode.SERVER: return await self._start_server(timeout, wait_for_connect)
 
-            self._server = await asyncio.start_server(self._client_connected_callback, "0.0.0.0", self.port, limit=1000, family=socket.AF_INET)
+    
+    async def _start_client(self, timeout=START_TIMEOUT) -> bool:
+        """
+        Start the Xcom client and connect to the Xcom server
+        """        
+        if not self._started:
+            _LOGGER.info(f"Xcom TCP client connect to {self._remote_ip}:{self._remote_port}")
+
+            self._reader, self._writer = await asyncio.open_connection(self._remote_ip, self._remote_port, limit=1000, family=socket.AF_INET)
+
+            _LOGGER.info(f"Connected to Xcom server '{self._remote_ip}'")
+            self._started = True
+            self._connected = True
+        else:
+            _LOGGER.info(f"Xcom TCP client already connected to {self._remote_ip}:{self._remote_port}")
+        
+        return True
+
+
+    async def _start_server(self, timeout=START_TIMEOUT, wait_for_connect=True) -> bool:
+        """
+        Start the Xcom Server and listening to the Xcom client.
+        """        
+        if not self._started:
+            _LOGGER.info(f"Xcom TCP server start listening on port {self._listen_port}")
+
+            self._server = await asyncio.start_server(self._client_connected_callback, "0.0.0.0", self._listen_port, limit=1000, family=socket.AF_INET)
             self._server._start_serving()
             self._started = True
         else:
-            _LOGGER.info(f"Xcom TCP server already listening on port {self.port}")
+            _LOGGER.info(f"Xcom TCP server already listening on port {self.listen_port}")
 
         if wait_for_connect:
             _LOGGER.info("Waiting for Xcom TCP client to connect...")
@@ -110,38 +158,6 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
         
         return True
 
-
-    async def stop(self):
-        """
-        Stop listening to the the Xcom Client and stop the Xcom Server.
-        """
-        _LOGGER.info(f"Stopping Xcom TCP server")
-        try:
-            self._connected = False
-
-            # Close the writer; we do not need to close the reader
-            if self._writer:
-                self._writer.close()
-                await self._writer.wait_closed()
-    
-        except Exception as e:
-            _LOGGER.warning(f"Exception during closing of Xcom writer: {e}")
-
-        # Close the server
-        try:
-            async with asyncio.timeout(STOP_TIMEOUT):
-                if self._server:
-                    self._server.close()
-                    await self._server.wait_closed()
-    
-        except asyncio.TimeoutError:
-            pass
-        except Exception as e:
-            _LOGGER.warning(f"Exception during closing of Xcom server: {e}")
-
-        self._started = False
-        _LOGGER.info(f"Stopped Xcom TCP server")
-    
 
     async def _client_connected_callback(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """
@@ -156,6 +172,42 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
 
         _LOGGER.info(f"Connected to Xcom client '{self._remote_ip}'")
 
+
+    async def stop(self):
+        """
+        Stop listening to the the Xcom Client and stop the Xcom Server.
+        """
+        match self._mode:
+            case XcomApiTcpMode.SERVER: name = "Xcom TCP server"
+            case XcomApiTcpMode.CLIENT: name = "Xcom TCP client"
+
+        _LOGGER.info(f"Stopping {name}")
+        try:
+            self._connected = False
+
+            # Close the writer; we do not need to close the reader
+            if self._writer:
+                self._writer.close()
+                await self._writer.wait_closed()
+    
+        except Exception as e:
+            _LOGGER.warning(f"Exception during closing of Xcom writer: {e}")
+
+        # Close the server (if any)
+        try:
+            if self._server:
+                async with asyncio.timeout(STOP_TIMEOUT):
+                    self._server.close()
+                    await self._server.wait_closed()
+    
+        except asyncio.TimeoutError:
+            pass
+        except Exception as e:
+            _LOGGER.warning(f"Exception during closing of Xcom server: {e}")
+
+        self._started = False
+        _LOGGER.info(f"Stopped {name}")
+    
 
     async def _sendPackage(self, package: XcomPackage):
         """
@@ -187,36 +239,81 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
 ##
 class XcomApiTcp(XcomApiBase):
 
-    def __init__(self, port=DEFAULT_PORT):
+    def __init__(self, mode:XcomApiTcpMode=XcomApiTcpMode.SERVER, listen_port=DEFAULT_PORT, remote_ip:str=None, remote_port:int=None):
         """
-        MOXA is connecting to the TCP Server we are creating here.
-        Once it is connected we can send package requests.
+        Usage: XcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=port)
+        or:    XcomApiTcp(mode=XcomApiTcpMode.CLIENT, remote_ip=ip, remote_port=port)
+        
+        In Server mode, MOXA needs to be running as TCP Client and will be connecting to the TCP Server we are creating here.
+        In Client mode, MOXA needs to be running as TCP Server and will listen for a connection from the TCP client we are creating here.
+
+        In both cases, once connected we can send package requests.
         """
         super().__init__()
 
-        self.port: int = port
-        self._socket: socket.socket = None
+        # Sanity check
+        match mode:
+            case XcomApiTcpMode.CLIENT:
+                if remote_ip is None: raise XcomParamException("Paramater 'remote_ip' was not specified")
+                if remote_port is None: raise XcomParamException("Paramater 'remote_port' was not specified")
+            case XcomApiTcpMode.SERVER:
+                if listen_port is None: raise XcomParamException("Paramater 'listen_port' was not specified")
+
+        # Remember our parameters
+        self._mode: XcomApiTcpMode = mode
+        self._listen_port: int = listen_port    # Only applicable if mode=SERVER
+        self._remote_ip = remote_ip      # Only applicable if mode=CLIENT
+        self._remote_port = remote_port  # Only applicable if mode=CLIENT
+
+        # internal administration
+        self._server: socket.socket = None
         self._connection: socket.socket = None
         self._started: bool = False
         self._connected: bool = False
-        self._remote_ip: str = None
 
 
-    def start(self, timeout=START_TIMEOUT, wait_for_connect=True) -> bool:
+    def start(self, timeout=START_TIMEOUT, wait_for_connect:bool = False) -> bool:
+        """
+        Start the Xcom Server or Client
+        """
+        match self._mode:
+            case XcomApiTcpMode.CLIENT: return self._start_client(timeout)
+            case XcomApiTcpMode.SERVER: return self._start_server(timeout)
+
+    
+    def _start_client(self, timeout=START_TIMEOUT) -> bool:
+        """
+        Start the Xcom client and connect to the Xcom server
+        """        
+        if not self._started:
+            _LOGGER.info(f"Xcom TCP Client connect to {self._remote_ip}:{self._remote_port}")
+
+            self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._connection.connect((self._remote_ip, self._remote_port))
+            self._connection.settimeout(REQ_TIMEOUT)
+            self._started = True
+            self._connected = True
+        else:
+            _LOGGER.info(f"Xcom TCP Client already connected to {self._remote_ip}:{self._remote_port}")
+        
+        return True    
+
+
+    def _start_server(self, timeout=START_TIMEOUT) -> bool:
         """
         Start the Xcom Server and listening to the Xcom client.
         """
         if not self._started:
-            _LOGGER.info(f"Xcom TCP server start listening on port {self.port}")
+            _LOGGER.info(f"Xcom TCP server start listening on port {self._listen_port}")
 
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self._socket.bind(("0.0.0.0", self.port))
-            self._socket.listen(1)
-            self._socket.settimeout(timeout)
+            self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._server.bind(("0.0.0.0", self._listen_port))
+            self._server.listen(1)
+            self._server.settimeout(timeout)
             self._started = True
 
-            self._connection, addr = self._socket.accept()
+            self._connection, addr = self._server.accept()
             self._connection.settimeout(REQ_TIMEOUT)
             self._connected = True
 
@@ -231,8 +328,14 @@ class XcomApiTcp(XcomApiBase):
         """
         Stop listening to the the Xcom Client and stop the Xcom Server.
         """
-        _LOGGER.info(f"Stopping Xcom TCP server")
+        match self._mode:
+            case XcomApiTcpMode.SERVER: name = "Xcom TCP server"
+            case XcomApiTcpMode.CLIENT: name = "Xcom TCP client"
+
+        _LOGGER.info(f"Stopping {name}")
         try:
+            self._connected = False
+
             if self._connection is not None:
                 self._connection.close()
                 self._connection = None
@@ -241,16 +344,15 @@ class XcomApiTcp(XcomApiBase):
            _LOGGER.warning(f"Exception during closing of tcp connection: {e}")
 
         try:
-            if self._socket is not None:
-                self._socket.close()
-                self._socket = None
+            if self._server is not None:
+                self._server.close()
+                self._server = None
 
         except Exception as e:
            _LOGGER.warning(f"Exception during closing of tcp server: {e}")
-
-        self._connected = False
+        
         self._started = False
-        _LOGGER.info(f"Stopped Xcom TCP server")
+        _LOGGER.info(f"Stopped {name}")
         
 
     def _sendPackage(self, package: XcomPackage):

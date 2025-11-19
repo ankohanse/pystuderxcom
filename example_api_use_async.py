@@ -2,10 +2,11 @@ import asyncio
 import logging
 import sys
 
-from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp
+from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
+from helper import RunHelper
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -21,7 +22,16 @@ async def main():
     param_5012 = dataset.getByNr(5012, "rcc")
     param_1107 = dataset.getByNr(1107, "xt")
 
-    api = AsyncXcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
+    # When Moxa is configured as TCP Client (preferred mode):
+    # api = AsyncXcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)                               
+    #
+    # When Moxa is configured as TCP Server:
+    # api = AsyncXcomApiTcp(mode=XcomApiTcpMode.CLIENT, remote_ip=<moxa_ip>, remote_port=<moxa_port>)   
+    #
+    # When Moxa is configured as UDP:
+    # api = AsyncXcomApiUdp(remote_ip=<moxa_ip>, remote_port=<moxa_port>, local_port=4001)
+
+    api = AsyncXcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)    # port number configured in Xcom-LAN/Moxa NPort
     try:
         if not await api.start():
             logger.info(f"Did not connect to Xcom")
@@ -127,4 +137,5 @@ async def main():
         await api.stop()
 
 
-asyncio.run(main())  # main loop
+
+RunHelper.run(main)  # main loop

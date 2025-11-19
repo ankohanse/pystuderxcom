@@ -260,24 +260,34 @@ class AsyncXcomDiscover:
                 else:
                     return None
             except:
-                pass
+                return None
 
         # Parallel check for Moxa Web Config page on all found device url's
         # No need to SSL verify plain HTTP GET calls, this also keeps Home Assistant happy
         async with httpx.AsyncClient(verify=False) as client:
-            tasks = [asyncio.create_task(check_url(client, url)) for url in urls]
-            for task in asyncio.as_completed(tasks):
-                try:
-                    url = await task
-                    if url is not None:
-                        # Cleanup remaining tasks and return found url
-                        for other_task in tasks:
-                            other_task.cancel()
+            async with asyncio.TaskGroup() as task_group:
+                 tasks = [task_group.create_task(check_url(client, url)) for url in urls]
 
-                        _LOGGER.info(f"Found Moxa Web Config url: {url}")
-                        return url
-                except:
-                    pass
-                
+            for task in asyncio.as_completed(tasks):
+                url = task.result() if hasattr(task, 'result') and callable(task.result) else await task
+                if url is not None:
+                    return url
+                     
         return None
+                    
+        #     tasks = [asyncio.create_task(check_url(client, url)) for url in urls]
+        #     for task in asyncio.as_completed(tasks):
+        #         try:
+        #             url = await task
+        #             if url is not None:
+        #                 # Cleanup remaining tasks and return found url
+        #                 for other_task in tasks:
+        #                     other_task.cancel()
+
+        #                 _LOGGER.info(f"Found Moxa Web Config url: {url}")
+        #                 return url
+        #         except:
+        #             pass
+                
+        # return None
         

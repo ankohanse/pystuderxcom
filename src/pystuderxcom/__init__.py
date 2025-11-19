@@ -10,7 +10,7 @@ from .api_base_sync import XcomApiBase
 from .discover_sync import XcomDiscover
 from .factory_sync import XcomFactory
 
-from .const import XcomVoltage, XcomLevel, XcomFormat, XcomCategory, XcomAggregationType
+from .const import XcomApiTcpMode, XcomVoltage, XcomLevel, XcomFormat, XcomCategory, XcomAggregationType
 from .const import XcomApiWriteException, XcomApiReadException, XcomApiTimeoutException, XcomApiUnpackException, XcomApiResponseIsError, XcomDiscoverNotConnected, XcomParamException
 from .data import XcomDiscoveredClient, XcomDiscoveredDevice
 from .datapoints import XcomDataset, XcomDatapoint, XcomDatapointUnknownException
