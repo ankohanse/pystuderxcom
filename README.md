@@ -27,9 +27,9 @@ That documentation can be found on:
 
 # Prerequisites
 
-This device depends on having a Studer Xcom-LAN (i.e. an Xcom-232i and a Moxa ethernet gateway) acting as a Xcom client and connecting to this integration. For older systems this will be a separate component, for future systems Studer have indicated that LAN connection will become part of the Xtender range.
+This library depends on having a Studer Xcom-LAN (i.e. an Xcom-232i and a Moxa ethernet gateway) acting as a Xcom client and connecting to this integration. For older systems this will be a separate component, for future systems Studer have indicated that LAN connection will become part of the Xtender range.
 
-The Studer Xcom-LAN will be able to simultaneously send data to the Studer online portal as well as sending data to this integration.
+The Studer Xcom-LAN will be able to simultaneously send data to the Studer online portal as well as sending data to this libarary.
 
 Configuration steps:
 
@@ -50,8 +50,8 @@ Configuration steps:
 
 3. Configure the Moxa NPort device
     - In the Main Menu, select 'Operating Settings' -> Port 1
-    - Verify that 'Operation Mode' is set to 'TCP Client'
-    - Add the ip-address of your HomeAssistant as 'Destination IP address'
+    - Verify that 'Operation Mode' is set to 'TCP Client' (preferred mode, TCP Server and UDP are also supported)
+    - Add the ip-address of your computer as 'Destination IP address'
     - Set Delimeter 1 to '0d' and Enable
     - Set Delimeter 2 to '0a' and Enable
     - Set Delimeter Process to 'Strip Delimeter'
@@ -69,40 +69,50 @@ The library is available from PyPi using:
 To read an infos or param or write to a param:
 
 ```
-from pystuderxcom import XcomApiTcp, XcomDataset, XcomVoltage
+from pystuderxcom import XcomApiTcp, XcomApiTcpMode, XcomDataset, XcomVoltage
 
-dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
+dataset = XcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
 info_3023 = dataset.getByNr(3023, "xt")  # the "xt" part is optional but usefull for detecting mistakes
 info_6001 = dataset.getByNr(6001, "bsp")
 param_1107 = dataset.getByNr(1107, "xt")
 dataset = None  # Release memory of the dataset
 
-api = XcomApiTcp(4001)    # port number configured in Xcom-LAN/Moxa NPort
+api = XcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)    # port number configured in Xcom-LAN/Moxa NPort
 try:
-    if not await api.start():
+    if not api.start():
         logger.info(f"Did not connect to Xcom")
         return
 
     # Retrieve info #3023 from the first Xtender (Output power)
-    value = await api.requestValue(info_3023, "XT1")    # xt address range is 101 to 109, or use "XT1" to "XT9"
+    value = api.requestValue(info_3023, "XT1")    # xt address range is 101 to 109, or use "XT1" to "XT9"
     logger.info(f"XT1 3023: {value} {info_3023.unit} ({info_3023.name})")
 
     # Retrieve param #6001 from BSP (Nominal capacity)
-    value = await api.requestValue(info_6001, "BSP")    # bsp address range is only 601, or use "BSP"
+    value = api.requestValue(info_6001, "BSP")    # bsp address range is only 601, or use "BSP"
     logger.info(f"BSP 6001: {value} {info_6001.unit} ({info_6001.name})")
 
     # Update param 1107 on the first Xtender (Maximum current of AC source)
     value = 4.0    # 4 Ampere
-    if await api.updateValue(param_1107, value, "XT1"):
+    if api.updateValue(param_1107, value, "XT1"):
         logger.info(f"XT1 1107 updated to {value} {param_1107.unit} ({param_1107.name})")
 
 finally:
-    await api.stop()
+    api.stop()
 ```
 
 A complete list of param and infos numbers can be found in the source of this library in file `src/pystuderxcom/xcom_datapoints_240v.json`  
 
-A complete list of all available device families and their address range can be found in file `src/pystuderxcom/xcom_families.py`  
+A complete list of all available device families and their address range can be found in file `src/pystuderxcom/xcom_families.py`
+
+Several other coding examples are provided:
+| Synchronous code | Asynchronous code | Description |
+| ---------------- | ----------------- | ------- |
+| example_api_use.py | example_api_use_async.py | read & write infos and params |
+| example_api_msg.py | example_api_msg_async.py | display system messages |
+| example_menu.py | example_menu_async.py | display menu structure |
+| example_discover_devices.py | example_discover_devices_async.py | discover local xcom devices |
+| example_discover_moxa.py | example_discover_moxa_async.py | discover url to moxa web-config |
+
 
 
 # Param writes to device RAM
