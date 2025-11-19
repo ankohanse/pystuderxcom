@@ -269,12 +269,16 @@ class XcomDiscover:
         # No need to SSL verify plain HTTP GET calls, this also keeps Home Assistant happy
         with httpx.Client(verify=False) as client:
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                 tasks = [executor.submit(check_url, client, url) for url in urls]
+                tasks = [executor.submit(check_url, client, url) for url in urls]
 
-            for task in concurrent.futures.as_completed(tasks):
-                url = task.result() if hasattr(task, 'result') and callable(task.result) else task
-                if url is not None:
-                    return url
+                # Start checking completed tasks immediately. Cancel remaining tasks if our url was found
+                for task in concurrent.futures.as_completed(tasks):
+                    url = task.result() if hasattr(task, 'result') and callable(task.result) else task
+                    if url is not None:
+                        for t in tasks:
+                            t.cancel()
+
+                        return url
                      
         return None
-        
+    

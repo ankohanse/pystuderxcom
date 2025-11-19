@@ -266,28 +266,16 @@ class AsyncXcomDiscover:
         # No need to SSL verify plain HTTP GET calls, this also keeps Home Assistant happy
         async with httpx.AsyncClient(verify=False) as client:
             async with asyncio.TaskGroup() as task_group:
-                 tasks = [task_group.create_task(check_url(client, url)) for url in urls]
+                tasks = [task_group.create_task(check_url(client, url)) for url in urls]
 
-            for task in asyncio.as_completed(tasks):
-                url = task.result() if hasattr(task, 'result') and callable(task.result) else await task
-                if url is not None:
-                    return url
+                # Start checking completed tasks immediately. Cancel remaining tasks if our url was found
+                for task in asyncio.as_completed(tasks):
+                    url = task.result() if hasattr(task, 'result') and callable(task.result) else await task
+                    if url is not None:
+                        for t in tasks:
+                            t.cancel()
+
+                        return url
                      
         return None
-                    
-        #     tasks = [asyncio.create_task(check_url(client, url)) for url in urls]
-        #     for task in asyncio.as_completed(tasks):
-        #         try:
-        #             url = await task
-        #             if url is not None:
-        #                 # Cleanup remaining tasks and return found url
-        #                 for other_task in tasks:
-        #                     other_task.cancel()
-
-        #                 _LOGGER.info(f"Found Moxa Web Config url: {url}")
-        #                 return url
-        #         except:
-        #             pass
-                
-        # return None
-        
+    
