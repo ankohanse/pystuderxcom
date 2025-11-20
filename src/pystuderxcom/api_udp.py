@@ -124,18 +124,18 @@ class AsyncXcomApiUdp(AsyncXcomApiBase):
         _LOGGER.info(f"Stopped Xcom UDP server")
 
 
-    async def _sendPackage(self, package: XcomPackage):
+    async def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        data = package.getBytes()
+        data = package.get_bytes()
         addr = (self._remote_ip, self._remote_port)
 
         self._socket.sendto(data, addr=addr )
     
 
-    async def _receivePackage(self) -> XcomPackage | None:
+    async def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT
@@ -206,18 +206,18 @@ class XcomApiUdp(XcomApiBase):
         _LOGGER.info(f"Stopped Xcom UDP server")
 
 
-    def _sendPackage(self, package: XcomPackage):
+    def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        data = package.getBytes()
+        data = package.get_bytes()
         addr = (self._remote_ip, self._remote_port)
 
         self._socket.sendto(data, addr)
     
 
-    def _receivePackage(self) -> XcomPackage | None:
+    def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT

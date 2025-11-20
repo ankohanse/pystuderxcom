@@ -27,13 +27,13 @@ def test_create():
 def test_nr():
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
 
-    param = dataset.getByNr(1107)
+    param = dataset.get_by_nr(1107)
     assert param.family_id == "xt"
     assert param.nr == 1107
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.PARAMETER
 
-    param = dataset.getByNr(1552)
+    param = dataset.get_by_nr(1552)
     assert param.family_id == "xt"
     assert param.nr == 1552
     assert param.format == XcomFormat.LONG_ENUM
@@ -42,19 +42,19 @@ def test_nr():
     assert type(param.options) is dict
     assert len(param.options) == 3
 
-    param = dataset.getByNr(3000)
+    param = dataset.get_by_nr(3000)
     assert param.family_id == "xt"
     assert param.nr == 3000
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.INFO
 
-    param = dataset.getByNr(3000, "xt")
+    param = dataset.get_by_nr(3000, "xt")
     assert param.family_id == "xt"
     assert param.nr == 3000
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.INFO
 
-    param = dataset.getByNr(5012, "rcc")
+    param = dataset.get_by_nr(5012, "rcc")
     assert param.family_id == "rcc"
     assert param.nr == 5012
     assert param.format == XcomFormat.LONG_ENUM
@@ -63,17 +63,17 @@ def test_nr():
     assert type(param.options) is dict
 
     with pytest.raises(XcomDatapointUnknownException):
-        param = dataset.getByNr(9999)
+        param = dataset.get_by_nr(9999)
 
     with pytest.raises(XcomDatapointUnknownException):
-        param = dataset.getByNr(3000, "bsp")
+        param = dataset.get_by_nr(3000, "bsp")
 
 
 @pytest.mark.asyncio
 def test_enum():
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
 
-    param = dataset.getByNr(1552)
+    param = dataset.get_by_nr(1552)
     assert param.options != None
     assert type(param.options) is dict
     assert len(param.options) == 3
@@ -93,10 +93,10 @@ def test_enum():
 def test_menu():
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
     
-    root_items = dataset.getMenuItems(0)
+    root_items = dataset.get_menu_items(0)
     assert len(root_items) == 12
 
     for item in root_items:
-        sub_items = dataset.getMenuItems(item.nr)
+        sub_items = dataset.get_menu_items(item.nr)
         assert len(sub_items) > 0
 

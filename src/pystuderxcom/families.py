@@ -29,29 +29,29 @@ class XcomDeviceCodeUnknownException(Exception):
 @dataclass
 class XcomDeviceFamily:
     id: str
-    idForNr: str    # L1, L2 and L3 use xt numbers
+    id_for_nr: str    # L1, L2 and L3 use xt numbers
     model: str
-    addrMulticast: int
-    addrDevicesStart: int
-    addrDevicesEnd: int
-    nrParamsStart: int
-    nrParamsEnd: int
-    nrInfosStart: int
-    nrInfosEnd: int
-    nrDiscover: int
+    addr_multicast: int
+    addr_devices_start: int
+    addr_devices_end: int
+    nr_params_start: int
+    nr_params_end: int
+    nr_infos_start: int
+    nr_infos_end: int
+    nr_discover: int
 
-    def getCode(self, addr):
-        if addr == self.addrMulticast:
+    def get_code(self, addr):
+        if addr == self.addr_multicast:
             return self.id.upper()
         
-        if self.addrDevicesStart == addr == self.addrDevicesEnd:
+        if self.addr_devices_start == addr == self.addr_devices_end:
             return self.id.upper()
         
-        if self.addrDevicesStart <= addr <= self.addrDevicesEnd:
-            idx = addr - self.addrDevicesStart + 1
+        if self.addr_devices_start <= addr <= self.addr_devices_end:
+            idx = addr - self.addr_devices_start + 1
             return f"{self.id.upper()}{idx}"
         
-        msg = f"Addr {addr} is not in range for family {self.id} addresses ({self.addrDevicesStart}-{self.addrDevicesEnd})"
+        msg = f"Addr {addr} is not in range for family {self.id} addresses ({self.addr_devices_start}-{self.addr_devices_end})"
         raise XcomDeviceAddrUnknownException(msg)
 
 
@@ -140,8 +140,8 @@ class XcomDeviceFamilies:
 
 
     @staticmethod
-    def getById(id: str) -> XcomDeviceFamily:
-        for f in XcomDeviceFamilies.getList():
+    def get_by_id(id: str) -> XcomDeviceFamily:
+        for f in XcomDeviceFamilies.get_list():
             if id == f.id:
                 return f
 
@@ -149,7 +149,7 @@ class XcomDeviceFamilies:
 
 
     @staticmethod
-    def getList() -> list[XcomDeviceFamily]:
+    def get_list() -> list[XcomDeviceFamily]:
         return [val for val in XcomDeviceFamilies.__dict__.values() if type(val) is XcomDeviceFamily]
 
 
@@ -160,7 +160,7 @@ class XcomDeviceFamilies:
     _addr_to_aggr_map: dict[str,int] = None
 
     @staticmethod
-    def _buildStaticMaps():
+    def _build_static_maps():
         """Fill static variable once"""
         if XcomDeviceFamilies._code_to_family_map is None:
 
@@ -170,12 +170,12 @@ class XcomDeviceFamilies:
             XcomDeviceFamilies._addr_to_aggr_map = {}
             # Note: no _addr_to_code_map because address range for BMS and BSP overlap
 
-            for f in XcomDeviceFamilies.getList():
+            for f in XcomDeviceFamilies.get_list():
                 has_aggr = f not in [XcomDeviceFamilies.L1, XcomDeviceFamilies.L2, XcomDeviceFamilies.L3]
 
-                for addr in range(f.addrDevicesStart, f.addrDevicesEnd+1):
-                    code = f.getCode(addr)
-                    aggr = XcomAggregationType(addr - f.addrDevicesStart + 1) if has_aggr else None
+                for addr in range(f.addr_devices_start, f.addr_devices_end+1):
+                    code = f.get_code(addr)
+                    aggr = XcomAggregationType(addr - f.addr_devices_start + 1) if has_aggr else None
                     
                     XcomDeviceFamilies._code_to_family_map[code] = f
                     XcomDeviceFamilies._code_to_addr_map[code] = addr # XT1-XT9 -> 101-109,  VT1-VT15 -> 301-315,  VS1-VS15 -> 701-715
@@ -184,45 +184,45 @@ class XcomDeviceFamilies:
 
 
     @staticmethod
-    def getByCode(code: str) -> XcomDeviceFamily:
+    def get_by_code(code: str) -> XcomDeviceFamily:
         """
         Lookup the code to find the device family
         """
-        XcomDeviceFamilies._buildStaticMaps()
+        XcomDeviceFamilies._build_static_maps()
 
         return  XcomDeviceFamilies._code_to_family_map.get(code, None)
     
 
     @staticmethod
-    def getAddrByCode(code: str) -> int:
+    def get_addr_by_code(code: str) -> int:
         """
         Lookup the code to find the addr
         """
-        XcomDeviceFamilies._buildStaticMaps()
+        XcomDeviceFamilies._build_static_maps()
 
         return XcomDeviceFamilies._code_to_addr_map.get(code, None)
 
 
     @staticmethod
-    def getAggregationTypeByCode(code: str) -> XcomAggregationType:
+    def get_aggregationtype_by_code(code: str) -> XcomAggregationType:
         """
         Lookup the code to find the aggregation_type
         """
-        XcomDeviceFamilies._buildStaticMaps()
+        XcomDeviceFamilies._build_static_maps()
         
         return XcomDeviceFamilies._code_to_aggr_map.get(code, None)
 
 
     @staticmethod
-    def getCodeByAddr(addr: int, family_id: str) -> int:
+    def get_code_by_addr(addr: int, family_id: str) -> int:
         """
         Lookup the addr to find the code.
         Family is passed as hint because BMS and BSP use same address range
         """
-        for family in XcomDeviceFamilies.getList():
-            if family.id == family_id or family.idForNr == family_id:
+        for family in XcomDeviceFamilies.get_list():
+            if family.id == family_id or family.id_for_nr == family_id:
                 try:
-                    return family.getCode(addr)
+                    return family.get_code(addr)
                 except:
                     pass
         
@@ -230,39 +230,39 @@ class XcomDeviceFamilies:
 
 
     @staticmethod
-    def getAggregationTypeByAddr(addr: int) -> XcomAggregationType:
+    def get_aggregationtype_by_addr(addr: int) -> XcomAggregationType:
         """
         Lookup the device address to find the aggregation_type
         Note that addr 601 can either be BMS or BSP. However, both result in XcomAggregationType=1 so we don't care...
         """
-        XcomDeviceFamilies._buildStaticMaps()
+        XcomDeviceFamilies._build_static_maps()
         
         return XcomDeviceFamilies._addr_to_aggr_map.get(addr, None)
     
 
     @staticmethod
-    def getCodeByAggregationType(aggr: XcomAggregationType, family_id: str):
+    def get_code_by_aggregationtype(aggr: XcomAggregationType, family_id: str):
         """
         Reverse lookup an aggregation_type to find the corresponding device code within a family
         Note that some aggregation_types (AVERAGE,SUM) will result in a None response.
         """
-        addr = XcomDeviceFamilies.getAddrByAggregationType(aggr, family_id)
+        addr = XcomDeviceFamilies.get_addr_by_aggregationtype(aggr, family_id)
         if addr is not None:
-            return XcomDeviceFamilies.getCodeByAddr(addr, family_id)
+            return XcomDeviceFamilies.get_code_by_addr(addr, family_id)
         else:
             return None
         
 
     @staticmethod
-    def getAddrByAggregationType(aggr: XcomAggregationType, family_id: str):
+    def get_addr_by_aggregationtype(aggr: XcomAggregationType, family_id: str):
         """
         Reverse lookup an aggregation_type to find the corresponding device address within a family.
         Note that some aggregation_types (AVERAGE,SUM) will result in a None response.
         """
-        XcomDeviceFamilies._buildStaticMaps()
-        family = XcomDeviceFamilies.getById(family_id)
+        XcomDeviceFamilies._build_static_maps()
+        family = XcomDeviceFamilies.get_by_id(family_id)
 
-        for addr in range(family.addrDevicesStart, family.addrDevicesEnd+1):
+        for addr in range(family.addr_devices_start, family.addr_devices_end+1):
             if XcomDeviceFamilies._addr_to_aggr_map.get(addr, None) == aggr:
                 return addr
             

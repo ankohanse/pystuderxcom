@@ -144,8 +144,8 @@ class XcomDataMultiInfoReq:
         items = list()
 
         while f_len >= 3:
-            user_info_ref = readUInt16(f)
-            aggr = readUInt8(f)
+            user_info_ref = read_uint16(f)
+            aggr = read_uint8(f)
             f_len -= 3
 
             items.append(XcomDataMultiInfoReqItem(
@@ -158,8 +158,8 @@ class XcomDataMultiInfoReq:
     def pack(self) -> bytes:
         f = BytesIO()
         for item in self.items:
-            writeUInt16(f, item.user_info_ref)
-            writeUInt8(f, item.aggregation_type)
+            write_uint16(f, item.user_info_ref)
+            write_uint8(f, item.aggregation_type)
         return f.getvalue()
 
     def __len__(self) -> int:
@@ -198,15 +198,15 @@ class XcomDataMultiInfoRsp:
         f = BytesIO(buf)
         f_len = f.getbuffer().nbytes
 
-        flags = readUInt32(f)
-        datetime= readUInt32(f)
+        flags = read_uint32(f)
+        datetime= read_uint32(f)
         items = list()
         f_len -= 8
 
         while f_len >= 7:
-            user_info_ref = readUInt16(f)
-            aggr = readUInt8(f)
-            data = readBytes(f, 4)
+            user_info_ref = read_uint16(f)
+            aggr = read_uint8(f)
+            data = read_bytes(f, 4)
             f_len -= 7
 
             items.append(XcomDataMultiInfoRspItem(
@@ -219,12 +219,12 @@ class XcomDataMultiInfoRsp:
 
     def pack(self) -> bytes:
         f = BytesIO()
-        writeUInt32(f, self.flags)
-        writeUInt32(f, self.datetime)
+        write_uint32(f, self.flags)
+        write_uint32(f, self.datetime)
         for item in self.items:
-            writeUInt16(f, item.user_info_ref)
-            writeUInt8(f, item.aggregation_type)
-            writeBytes(f, XcomData.pack(item.data, XcomFormat.FLOAT))
+            write_uint16(f, item.user_info_ref)
+            write_uint8(f, item.aggregation_type)
+            write_bytes(f, XcomData.pack(item.data, XcomFormat.FLOAT))
 
         return f.getvalue()
     
@@ -253,21 +253,21 @@ class XcomDataMessageRsp:
     def unpack(buf: bytes) -> 'XcomDataMessageRsp':
         f = BytesIO(buf)
         
-        msg_total = readUInt32(f)
-        msg_number= readUInt16(f)
-        src = readUInt32(f)
-        timestamp = readUInt32(f)
-        value = readUInt32(f)
+        msg_total = read_uint32(f)
+        msg_number= read_uint16(f)
+        src = read_uint32(f)
+        timestamp = read_uint32(f)
+        value = read_uint32(f)
 
         return XcomDataMessageRsp(msg_total, msg_number, src, timestamp, value)
 
     def pack(self) -> bytes:
         f = BytesIO()
-        writeUInt32(f, self.message_total)
-        writeUInt16(f, self.message_number)
-        writeUInt32(f, self.source_address)
-        writeUInt32(f, self.timestamp)
-        writeUInt32(f, self.value)
+        write_uint32(f, self.message_total)
+        write_uint16(f, self.message_number)
+        write_uint32(f, self.source_address)
+        write_uint32(f, self.timestamp)
+        write_uint32(f, self.value)
 
         return f.getvalue()
 
@@ -284,42 +284,42 @@ class SyncReader(io.BytesIO):
         super().__init__(buf)
 
 
-def readFloat(f: BufferedReader) -> float:
+def read_float(f: BufferedReader) -> float:
     return struct.unpack('<f', f.read(4))
 
-def writeFloat(f: BufferedReader, value: float) -> int:
+def write_float(f: BufferedReader, value: float) -> int:
     return f.write(struct.pack("<f", float(value)))
 
 
-def readSInt32(f: BufferedReader) -> int:
+def read_sint32(f: BufferedReader) -> int:
     return int.from_bytes(f.read(4), byteorder="little", signed=True)
 
-def writeSInt32(f: BufferedWriter, value: int) -> int:
+def write_sint32(f: BufferedWriter, value: int) -> int:
     return f.write(value.to_bytes(4, byteorder="little", signed=True))
 
 
-def readUInt32(f: BufferedReader) -> int:
+def read_uint32(f: BufferedReader) -> int:
     return int.from_bytes(f.read(4), byteorder="little", signed=False)
 
-def writeUInt32(f: BufferedWriter, value: int) -> int:
+def write_uint32(f: BufferedWriter, value: int) -> int:
     return f.write(value.to_bytes(4, byteorder="little", signed=False))
 
-def readUInt16(f: BufferedReader) -> int:
+def read_uint16(f: BufferedReader) -> int:
     return int.from_bytes(f.read(2), byteorder="little", signed=False)
 
-def writeUInt16(f: BufferedWriter, value: int) -> int:
+def write_uint16(f: BufferedWriter, value: int) -> int:
     return f.write(value.to_bytes(2, byteorder="little", signed=False))
 
 
-def readUInt8(f: BufferedReader) -> int:
+def read_uint8(f: BufferedReader) -> int:
     return int.from_bytes(f.read(1), byteorder="little", signed=False)
 
-def writeUInt8(f: BufferedWriter, value: int) -> int:
+def write_uint8(f: BufferedWriter, value: int) -> int:
     return f.write(value.to_bytes(1, byteorder="little", signed=False))
 
 
-def readBytes(f: BufferedReader, length: int) -> int:
+def read_bytes(f: BufferedReader, length: int) -> int:
     return f.read(length)
 
-def writeBytes(f: BufferedWriter, value: bytes) -> int:
+def write_bytes(f: BufferedWriter, value: bytes) -> int:
     return f.write(value)

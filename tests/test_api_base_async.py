@@ -24,7 +24,7 @@ from . import AsyncTaskHelper, TaskHelper
         ("request guid timeout", 501, ScomService.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x00, XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID), None, XcomApiTimeoutException),
     ]
 )
-async def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
+async def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
     async def on_receive(api: AsyncTestApi):
         """Helper to turn a request into a response"""
@@ -38,7 +38,7 @@ async def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        value = await api.requestGuid(retries=1, timeout=5)
+        value = await api.request_guid(retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -59,7 +59,7 @@ async def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj
         assert value == exp_value
     else:
         with pytest.raises(exp_except):
-            value = await api.requestGuid(retries=1, timeout=5)
+            value = await api.request_guid(retries=1, timeout=5)
 
 
 @pytest.mark.asyncio
@@ -73,10 +73,10 @@ async def test_requestGuid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj
         ("request param vo",     5012, 501, 501, ScomService.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, XcomFormat.INT32), 32, None),
     ]
 )
-async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
+async def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
     dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
-    param = dataset.getByNr(test_nr)
+    param = dataset.get_by_nr(test_nr)
 
     async def on_receive(api: AsyncTestApi):
         """Helper to turn a request into a response"""
@@ -90,7 +90,7 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        value = await api.requestValue(param, test_dest, retries=1, timeout=5)
+        value = await api.request_value(param, test_dest, retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -111,7 +111,7 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
         assert value == exp_value
     else:
         with pytest.raises(exp_except):
-            value = await api.requestValue(param, test_dest, retries=1, timeout=5)
+            value = await api.request_value(param, test_dest, retries=1, timeout=5)
 
 
 @pytest.mark.asyncio
@@ -124,10 +124,10 @@ async def test_requestValue(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, 
         ("update param vo",      5012, 501, 32,   501, ScomService.WRITE, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.ACCESS_DENIED, XcomFormat.ERROR), None, XcomApiResponseIsError),
     ]
 )
-async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
+async def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
     dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
-    param = dataset.getByNr(test_nr)
+    param = dataset.get_by_nr(test_nr)
 
     async def on_receive(api: AsyncTestApi):
         """Helper to turn a request into a response"""
@@ -141,7 +141,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        value = await api.updateValue(param, test_value_update, test_dest, retries=1, timeout=5)
+        value = await api.update_value(param, test_value_update, test_dest, retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -162,7 +162,7 @@ async def test_updateValue(name, test_nr, test_dest, test_value_update, exp_dst_
         assert value == exp_value
     else:
         with pytest.raises(exp_except):
-            value = await api.updateValue(param, test_value_update, test_dest, retries=1, timeout=5)
+            value = await api.update_value(param, test_value_update, test_dest, retries=1, timeout=5)
 
 
 @pytest_asyncio.fixture
@@ -172,9 +172,9 @@ async def dataset():
 
 @pytest_asyncio.fixture
 async def data_infos_dev(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    info_3023 = dataset.getByNr(3023)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    info_3023 = dataset.get_by_nr(3023)
 
     req_data = XcomValues([
         XcomValuesItem(info_3021, code="XT1"),
@@ -196,9 +196,9 @@ async def data_infos_dev(dataset):
 
 @pytest_asyncio.fixture
 async def data_infos_aggr(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    info_3023 = dataset.getByNr(3023)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    info_3023 = dataset.get_by_nr(3023)
 
     req_data = XcomValues([
         XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
@@ -220,9 +220,9 @@ async def data_infos_aggr(dataset):
 
 @pytest_asyncio.fixture
 async def data_infos_params_dev(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    param_1107 = dataset.getByNr(1107)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    param_1107 = dataset.get_by_nr(1107)
 
     req_data = XcomValues([
         XcomValuesItem(info_3021, code="XT1"),
@@ -244,9 +244,9 @@ async def data_infos_params_dev(dataset):
 
 @pytest_asyncio.fixture
 async def data_infos_params_aggr(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    param_1107 = dataset.getByNr(1107)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    param_1107 = dataset.get_by_nr(1107)
 
     req_data = XcomValues([
         XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
@@ -281,7 +281,7 @@ async def data_infos_params_aggr(dataset):
         ("request infos params aggr",  "data_infos_params_aggr", False, ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
     ]
 )
-async def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except, request):
+async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except, request):
 
     req_data, exp_rsp_multi, _ = request.getfixturevalue(values_fixture)
 
@@ -296,7 +296,7 @@ async def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp
             if rsp_flags & 0x01:
                 api.response_package.frame_data.service_data.property_data = XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR)
             else:
-                api.response_package.frame_data.service_data.property_data = exp_rsp_multi.packResponse()
+                api.response_package.frame_data.service_data.property_data = exp_rsp_multi.pack_response()
 
             api.response_package.header.data_length = len(api.response_package.frame_data)
 
@@ -304,7 +304,7 @@ async def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        rsp_data = await api.requestInfos(req_data, retries=1, timeout=5)
+        rsp_data = await api.request_infos(req_data, retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -340,7 +340,7 @@ async def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp
                     assert item.value == exp_item.value
     else:
         with pytest.raises(exp_except):
-            rsp_data = await api.requestInfos(req_data, retries=1, timeout=5)
+            rsp_data = await api.request_infos(req_data, retries=1, timeout=5)
 
 
 @pytest.mark.asyncio
@@ -356,7 +356,7 @@ async def test_requestInfos(name, values_fixture, run_receive, exp_src_addr, exp
         ("request values params aggr",    "data_infos_params_aggr", False, 0x02, False, False, XcomParamException),
     ]
 )
-async def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except, request):
+async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except, request):
     
     req_data, exp_rsp_multi, exp_rsp_single_val = request.getfixturevalue(values_fixture)
 
@@ -372,7 +372,7 @@ async def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_v
                 api.response_package.frame_data.service_data.property_data = XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR)
 
             elif api.request_package.frame_data.service_data.object_type == ScomObjType.MULTI_INFO:
-                api.response_package.frame_data.service_data.property_data = exp_rsp_multi.packResponse()
+                api.response_package.frame_data.service_data.property_data = exp_rsp_multi.pack_response()
 
             else:
                 api.response_package.frame_data.service_data.property_data = XcomData.pack(exp_rsp_single_val, XcomFormat.FLOAT)
@@ -383,7 +383,7 @@ async def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_v
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        rsp_data = await api.requestValues(req_data, retries=1, timeout=5)
+        rsp_data = await api.request_values(req_data, retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -415,7 +415,7 @@ async def test_requestValues(name, values_fixture, run_receive, rsp_flags, exp_v
                 assert item.value is None
     else:
         with pytest.raises(exp_except):
-            rsp_data = await api.requestValues(req_data, retries=1, timeout=5)
+            rsp_data = await api.request_values(req_data, retries=1, timeout=5)
 
 
 @pytest_asyncio.fixture
@@ -434,7 +434,7 @@ async def data_message():
         ("request msg timeout", 1, ScomService.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x00, "data_message", None, XcomApiTimeoutException),
     ]
 )
-async def test_requestMessage(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
+async def test_request_message(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
     if isinstance(rsp_data, str):
         rsp_data = request.getfixturevalue(rsp_data)
@@ -452,7 +452,7 @@ async def test_requestMessage(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_i
     api = AsyncTestApi(on_receive_handler=on_receive)
 
     if exp_except == None:
-        msg = await api.requestMessage(test_nr, retries=1, timeout=5)
+        msg = await api.request_message(test_nr, retries=1, timeout=5)
 
         assert api.send_called == True
         assert api.request_package is not None
@@ -478,5 +478,5 @@ async def test_requestMessage(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_i
         assert msg.message_string is not None
     else:
         with pytest.raises(exp_except):
-            msg = await api.requestMessage(test_nr, retries=1, timeout=5)
+            msg = await api.request_message(test_nr, retries=1, timeout=5)
 

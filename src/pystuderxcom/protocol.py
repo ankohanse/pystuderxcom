@@ -23,18 +23,18 @@ from .const import (
 )
 from .data import (
     XcomData,
-    readFloat,
-    writeFloat,
-    readUInt32,
-    writeUInt32,
-    readUInt16,
-    writeUInt16,
-    readUInt8,
-    writeUInt8,
-    readSInt32,
-    writeSInt32,
-    readBytes,
-    writeBytes,
+    read_float,
+    write_float,
+    read_uint32,
+    write_uint32,
+    read_uint16,
+    write_uint16,
+    read_uint8,
+    write_uint8,
+    read_sint32,
+    write_sint32,
+    read_bytes,
+    write_bytes,
 )
 
 
@@ -51,10 +51,10 @@ class XcomService:
     @staticmethod
     def parse(f: BufferedReader):
         return XcomService(
-            object_type   = readUInt16(f),
-            object_id     = readUInt32(f),
-            property_id   = readUInt16(f),
-            property_data = readBytes(f, -1),
+            object_type   = read_uint16(f),
+            object_id     = read_uint32(f),
+            property_id   = read_uint16(f),
+            property_data = read_bytes(f, -1),
         )
 
     def __init__(self, 
@@ -67,10 +67,10 @@ class XcomService:
         self.property_data = property_data
 
     def assemble(self, f: BufferedWriter):
-        writeUInt16(f, self.object_type)
-        writeUInt32(f, self.object_id)
-        writeUInt16(f, self.property_id)
-        writeBytes(f, self.property_data)
+        write_uint16(f, self.object_type)
+        write_uint32(f, self.object_id)
+        write_uint16(f, self.property_id)
+        write_bytes(f, self.property_data)
 
     def __len__(self) -> int:
         return 2*2 + 4 + len(self.property_data)
@@ -88,13 +88,13 @@ class XcomFrame:
     @staticmethod
     def parse(f: BufferedReader):
         return XcomFrame(
-            service_flags = readUInt8(f),
-            service_id = readUInt8(f),
+            service_flags = read_uint8(f),
+            service_id = read_uint8(f),
             service_data = XcomService.parse(f)
         )
 
     @staticmethod
-    def parseBytes(buf: bytes):
+    def parse_bytes(buf: bytes):
         return XcomFrame.parse(BytesIO(buf))
 
     def __init__(self, service_id: bytes, service_data: XcomService, service_flags=0):
@@ -103,11 +103,11 @@ class XcomFrame:
         self.service_data = service_data
 
     def assemble(self, f: BufferedWriter):
-        writeUInt8(f, self.service_flags)
-        writeUInt8(f, self.service_id)
+        write_uint8(f, self.service_flags)
+        write_uint8(f, self.service_id)
         self.service_data.assemble(f)
 
-    def getBytes(self) -> bytes:
+    def get_bytes(self) -> bytes:
         buf = BytesIO()
         self.assemble(buf)
         return buf.getvalue()
@@ -131,14 +131,14 @@ class XcomHeader:
     @staticmethod
     def parse(f: BufferedReader):
         return XcomHeader(
-            frame_flags = readUInt8(f),
-            src_addr = readUInt32(f),
-            dst_addr = readUInt32(f),
-            data_length = readUInt16(f)
+            frame_flags = read_uint8(f),
+            src_addr = read_uint32(f),
+            dst_addr = read_uint32(f),
+            data_length = read_uint16(f)
         )
 
     @staticmethod
-    def parseBytes(buf: bytes):
+    def parse_bytes(buf: bytes):
         return XcomHeader.parse(BytesIO(buf))
 
     def __init__(self, src_addr: int, dst_addr: int, data_length: int, frame_flags=0):
@@ -150,12 +150,12 @@ class XcomHeader:
         self.data_length = data_length
 
     def assemble(self, f: BufferedWriter):
-        writeUInt8(f, self.frame_flags)
-        writeUInt32(f, self.src_addr)
-        writeUInt32(f, self.dst_addr)
-        writeUInt16(f, self.data_length)
+        write_uint8(f, self.frame_flags)
+        write_uint32(f, self.src_addr)
+        write_uint32(f, self.dst_addr)
+        write_uint16(f, self.data_length)
 
-    def getBytes(self) -> bytes:
+    def get_bytes(self) -> bytes:
         buf = BytesIO()
         self.assemble(buf)
         return buf.getvalue()
@@ -176,7 +176,7 @@ class XcomPackage():
     frame_data: XcomFrame
 
     @staticmethod
-    def genPackage(
+    def gen_package(
             service_id: int,
             object_type: int,
             object_id: int,
@@ -196,34 +196,34 @@ class XcomPackage():
         self.frame_data = frame_data
 
     def assemble(self, f: BufferedWriter):
-        writeBytes(f, self.start_byte)
+        write_bytes(f, self.start_byte)
 
-        header = self.header.getBytes()
-        writeBytes(f, header)
-        writeBytes(f, XcomPackage.checksum(header))
+        header = self.header.get_bytes()
+        write_bytes(f, header)
+        write_bytes(f, XcomPackage.checksum(header))
 
-        data = self.frame_data.getBytes()
-        writeBytes(f, data)
-        writeBytes(f, XcomPackage.checksum(data))
+        data = self.frame_data.get_bytes()
+        write_bytes(f, data)
+        write_bytes(f, XcomPackage.checksum(data))
 
         # Don't write delimeter, seems not needed as we send the package in one whole chunk
-        #writeBytes(f, self.delimeters)
+        #write_bytes(f, self.delimeters)
 
-    def getBytes(self) -> bytes:
+    def get_bytes(self) -> bytes:
         buf = BytesIO()
         self.assemble(buf)
         return buf.getvalue()
     
-    def isResponse(self) -> bool:
+    def is_response(self) -> bool:
         return (self.frame_data.service_flags & 2) >> 1 == 1
 
-    def isError(self) -> bool:
+    def is_error(self) -> bool:
         return self.frame_data.service_flags & 1 == 1
 
-    def getError(self) -> str:
-        if self.isError():
+    def get_error(self) -> str:
+        if self.is_error():
             error = XcomData.unpack(self.frame_data.service_data.property_data, XcomFormat.ERROR)
-            return ScomErrorCode.getByError(error)
+            return ScomErrorCode.get_by_error(error)
         return None
  
     def __str__(self) -> str:

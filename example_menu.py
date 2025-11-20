@@ -19,15 +19,15 @@ def main():
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
 
     # Helper function to recursively print the entire menu
-    def printMenu(parent, indent=""):
-        items = dataset.getMenuItems(parent)
+    def print_menu(parent, indent=""):
+        items = dataset.get_menu_items(parent)
         for item in items:
             logger.info(f"{indent}{item.nr}: {item.name}")
 
             if item.format == XcomFormat.MENU:
-                printMenu(item.nr, indent+"  ")
+                print_menu(item.nr, indent+"  ")
 
-    printMenu(0)
+    print_menu(0)
     dataset = None  # Release memory of the dataset
 
 

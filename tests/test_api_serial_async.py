@@ -62,7 +62,7 @@ async def context():
 
 @pytest_asyncio.fixture
 async def package_read_info():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.INFO,
         object_id = 0x01020304,
@@ -133,8 +133,8 @@ async def test_send_receive_package(name, exp_data, request):
 
     # Perform a receive to local from remote
     if exp_data:
-        task_remote = await AsyncTaskHelper(context.remote._sendPackage, package).start()
-        task_local = await AsyncTaskHelper(context.local._receivePackage).start()
+        task_remote = await AsyncTaskHelper(context.remote._send_package, package).start()
+        task_local = await AsyncTaskHelper(context.local._receive_package).start()
         
         rsp_package = await task_local.join()
         await task_remote.join()
@@ -148,7 +148,7 @@ async def test_send_receive_package(name, exp_data, request):
         assert rsp_package.frame_data.service_data.property_id == package.frame_data.service_data.property_id
 
     else:
-        task_local = await AsyncTaskHelper(context.local._receivePackage).start()
+        task_local = await AsyncTaskHelper(context.local._receive_package).start()
         rsp_package = await task_local.join()
 
         assert rsp_package is None

@@ -61,7 +61,7 @@ def context():
 
 @pytest.fixture
 def package_read_info():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.INFO,
         object_id = 0x01020304,
@@ -134,8 +134,8 @@ def test_send_receive(name, exp_data, request):
 
     # Perform a receive from client to server
     if exp_data:
-        task_client = TaskHelper(context.client._sendPackage, package).start()
-        task_server = TaskHelper(context.server._receivePackage).start()
+        task_client = TaskHelper(context.client._send_package, package).start()
+        task_server = TaskHelper(context.server._receive_package).start()
         
         rsp_package = task_server.join()
         task_client.join()
@@ -149,7 +149,7 @@ def test_send_receive(name, exp_data, request):
         assert rsp_package.frame_data.service_data.property_id == package.frame_data.service_data.property_id
 
     else:
-        task_server = TaskHelper(context.server._receivePackage).start()
+        task_server = TaskHelper(context.server._receive_package).start()
         rsp_package = task_server.join()
 
         assert rsp_package is None

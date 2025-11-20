@@ -6,17 +6,17 @@ from pystuderxcom import XcomAggregationType
 
 
 def test_list():
-    families = XcomDeviceFamilies.getList()
+    families = XcomDeviceFamilies.get_list()
     assert len(families) == 9
 
 
 def test_id():
-    families = XcomDeviceFamilies.getList()
+    families = XcomDeviceFamilies.get_list()
     for family in families:
-        assert family == XcomDeviceFamilies.getById(family.id)
+        assert family == XcomDeviceFamilies.get_by_id(family.id)
 
     with pytest.raises(XcomDeviceFamilyUnknownException):
-        family = XcomDeviceFamilies.getById("XXX")
+        family = XcomDeviceFamilies.get_by_id("XXX")
 
 
 @pytest.mark.parametrize(
@@ -39,15 +39,15 @@ def test_id():
 )
 def test_code(family_id, code, addr, aggr):
 
-    family = XcomDeviceFamilies.getById(family_id)
+    family = XcomDeviceFamilies.get_by_id(family_id)
 
     if addr is not None:
-        assert XcomDeviceFamilies.getByCode(code) == family
+        assert XcomDeviceFamilies.get_by_code(code) == family
     else:
-        assert XcomDeviceFamilies.getByCode(code) is None
+        assert XcomDeviceFamilies.get_by_code(code) is None
 
-    assert XcomDeviceFamilies.getAddrByCode(code) == addr
-    assert XcomDeviceFamilies.getAggregationTypeByCode(code) == aggr
+    assert XcomDeviceFamilies.get_addr_by_code(code) == addr
+    assert XcomDeviceFamilies.get_aggregationtype_by_code(code) == aggr
 
 
 @pytest.mark.parametrize(
@@ -73,16 +73,16 @@ def test_code(family_id, code, addr, aggr):
 )
 def test_addr(family_id, addr, fam_code, code, aggr):
 
-    family = XcomDeviceFamilies.getById(family_id)
+    family = XcomDeviceFamilies.get_by_id(family_id)
 
     if fam_code is not None:
-        assert family.getCode(addr) == fam_code
+        assert family.get_code(addr) == fam_code
     else:
         with pytest.raises(XcomDeviceAddrUnknownException):
-            family.getCode(addr)
+            family.get_code(addr)
 
-    assert XcomDeviceFamilies.getCodeByAddr(addr, family.id) == code
-    assert XcomDeviceFamilies.getAggregationTypeByAddr(addr) == aggr
+    assert XcomDeviceFamilies.get_code_by_addr(addr, family.id) == code
+    assert XcomDeviceFamilies.get_aggregationtype_by_addr(addr) == aggr
 
 
 @pytest.mark.parametrize(
@@ -132,8 +132,8 @@ def test_addr(family_id, addr, fam_code, code, aggr):
 )
 def test_aggr(family_id, aggr, code, addr):
 
-    assert XcomDeviceFamilies.getCodeByAggregationType(aggr, family_id) == code
-    assert XcomDeviceFamilies.getAddrByAggregationType(aggr, family_id) == addr
+    assert XcomDeviceFamilies.get_code_by_aggregationtype(aggr, family_id) == code
+    assert XcomDeviceFamilies.get_addr_by_aggregationtype(aggr, family_id) == addr
 
 
 

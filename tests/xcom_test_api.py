@@ -32,14 +32,14 @@ class AsyncTestApi(AsyncXcomApiBase):
         self.request_package: XcomPackage = None
         self.response_package: XcomPackage = None
 
-    async def _sendPackage(self, package: XcomPackage):
+    async def _send_package(self, package: XcomPackage):
         self.send_called = True
         self.request_package = package
 
         if self._on_send:
             await self._on_send(self)
 
-    async def _receivePackage(self) -> XcomPackage | None:
+    async def _receive_package(self) -> XcomPackage | None:
         if self._on_receive:
             await self._on_receive(self)
 
@@ -69,14 +69,14 @@ class TestApi(XcomApiBase):
         self.request_package: XcomPackage = None
         self.response_package: XcomPackage = None
 
-    def _sendPackage(self, package: XcomPackage):
+    def _send_package(self, package: XcomPackage):
         self.send_called = True
         self.request_package = package
 
         if self._on_send:
             self._on_send(self)
 
-    def _receivePackage(self) -> XcomPackage | None:
+    def _receive_package(self) -> XcomPackage | None:
         if self._on_receive:
             self._on_receive(self)
 

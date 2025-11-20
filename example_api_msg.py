@@ -36,7 +36,7 @@ def main():
         logger.info(f"")
         logger.info(f"Retrieve unique guid of this installation")
 
-        value = api.requestGuid()
+        value = api.request_guid()
         logger.info(f"Installation Guid: {value}")
 
         # Retrieve messages
@@ -47,7 +47,7 @@ def main():
         # But be aware that it will also erase the flag that there are new messages
         idx = 0
         for idx in range(0, 0xFFFFFFFF):
-            msg = api.requestMessage(idx)
+            msg = api.request_message(idx)
             logger.info(f"msg #{idx} from {msg.source_address} at {datetime.fromtimestamp(msg.timestamp)}: {msg.message_string}")
 
             if msg.message_total <= 1:

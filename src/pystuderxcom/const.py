@@ -283,7 +283,7 @@ class ScomErrorCode:
         return self.name
 
     @staticmethod
-    def getByError(error: int):
+    def get_by_error(error: int):
         for key,val in ScomErrorCode.__dict__.items():
             if type(key) is str and type(val) is int and val==error:
                 return key

@@ -57,8 +57,8 @@ from .values import (
     XcomValues,
     XcomValuesItem,
 )
-import time
 import threading
+import time
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class XcomApiBase:
         return False
 
 
-    def requestGuid(self, retries = None, timeout = None, verbose=False):
+    def request_guid(self, retries = None, timeout = None, verbose=False):
         """
         Request the GUID that is used for remotely identifying the installation.
         This function is only for the Modem or Ethernet mode
@@ -142,7 +142,7 @@ class XcomApiBase:
         """
 
         # Compose the request and send it
-        request: XcomPackage = XcomPackage.genPackage(
+        request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomService.READ,
             object_type = ScomObjType.GUID,
             object_id = ScomObjId.NONE,
@@ -151,7 +151,7 @@ class XcomApiBase:
             dst_addr = ScomAddress.RCC
         )
 
-        response = self._sendRequest(request, retries=retries, timeout=timeout, verbose=verbose)
+        response = self._send_request(request, retries=retries, timeout=timeout, verbose=verbose)
         if response is not None:
             # Unpack the response value
             try:
@@ -162,7 +162,7 @@ class XcomApiBase:
                 raise XcomApiUnpackException(msg) from None
 
                                          
-    def requestValue(self, parameter: XcomDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
+    def request_value(self, parameter: XcomDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
         """
         Request a param or info.
         Returns None if not connected, otherwise returns the requested value
@@ -175,10 +175,10 @@ class XcomApiBase:
 
         # Check/convert input parameters        
         if type(dstAddr) is str:
-            dstAddr = XcomDeviceFamilies.getAddrByCode(dstAddr)
+            dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
 
         # Compose the request and send it
-        request: XcomPackage = XcomPackage.genPackage(
+        request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomService.READ,
             object_type = ScomObjType.PARAMETER if parameter.category == XcomCategory.PARAMETER else ScomObjType.INFO,
             object_id = parameter.nr,
@@ -187,7 +187,7 @@ class XcomApiBase:
             dst_addr = dstAddr
         )
 
-        response = self._sendRequest(request, retries=retries, timeout=timeout, verbose=verbose)
+        response = self._send_request(request, retries=retries, timeout=timeout, verbose=verbose)
         if response is not None:
             # Unpack the response value
             try:
@@ -198,7 +198,7 @@ class XcomApiBase:
                 raise XcomApiUnpackException(msg) from None
 
                                          
-    def requestInfos(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
+    def request_infos(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
         """
         Request multiple infos in one call.
         Per info you can indicate what device to get it from, or to get Average or Sum of multiple devices
@@ -217,33 +217,33 @@ class XcomApiBase:
         # Sanity check
         for item in request_data.items:
             if item.datapoint.category != XcomCategory.INFO:
-                raise XcomParamException(f"Invalid datapoint passed to requestInfos; must have type INFO. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
+                raise XcomParamException(f"Invalid datapoint passed to request_infos; must have type INFO. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
             
             if item.aggregation_type not in XcomAggregationType:
-                raise XcomParamException(f"Invalid aggregation_type passed to requestInfos; violated by '{item.aggregation_type}'")                
+                raise XcomParamException(f"Invalid aggregation_type passed to request_infos; violated by '{item.aggregation_type}'")                
 
         # Compose the request and send it
-        request: XcomPackage = XcomPackage.genPackage(
+        request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomService.READ,
             object_type = ScomObjType.MULTI_INFO,
             object_id = ScomObjId.MULTI_INFO,
-            property_id = self._getNextRequestId() & 0xffff,
-            property_data = request_data.packRequest(),
+            property_id = self._get_next_request_id() & 0xffff,
+            property_data = request_data.pack_request(),
             dst_addr = ScomAddress.RCC
         )
 
-        response = self._sendRequest(request, retries=retries, timeout=timeout, verbose=verbose)
+        response = self._send_request(request, retries=retries, timeout=timeout, verbose=verbose)
         if response is not None:
             try:
                 # Unpack the response value
-                return XcomValues.unpackResponse(response.frame_data.service_data.property_data, request_data)
+                return XcomValues.unpack_response(response.frame_data.service_data.property_data, request_data)
 
             except Exception as e:
                 msg = f"Failed to unpack response package for multi-info request, data={response.frame_data.service_data.property_data.hex()}: {e}"
                 raise XcomApiUnpackException(msg) from None
 
 
-    def requestValues(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
+    def request_values(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
         """
         Request multiple infos and params in one call.
         Can only retrieve actual device values, NOT the average or sum over multiple devices.
@@ -260,7 +260,7 @@ class XcomApiBase:
             XcomApiResponseIsError
         """
 
-        # Sort out which XcomValues can be done via multi requestValues and which must be done via single requestValue
+        # Sort out which XcomValues can be done via multi request_values and which must be done via single request_value
         req_singles: list[XcomValuesItem] = []
         req_multi_items: list[XcomValuesItem] = []
         req_multis: list[XcomValues] = []
@@ -271,23 +271,23 @@ class XcomApiBase:
             match item.datapoint.category:
                 case XcomCategory.INFO:
                     if item.aggregation_type is not None and item.aggregation_type in range(XcomAggregationType.DEVICE1, XcomAggregationType.DEVICE15+1):
-                        # Can be combined with other infos in a requestValues call
+                        # Can be combined with other infos in a request_values call
                         req_multi_items.append(item)
 
                     elif item.address is not None:
-                        # Any others need to be done via an individual requestValue cal
+                        # Any others need to be done via an individual request_value cal
                         req_singles.append(item)
 
                     else:
-                        raise XcomParamException(f"Invalid XcomValuesItem passed to requestValues; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
+                        raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
 
                 case XcomCategory.PARAMETER:
                     if item.address is not None:
-                        # Needs to be done via an individual requestValue call
+                        # Needs to be done via an individual request_value call
                         req_singles.append(item)
 
                     else:
-                        raise XcomParamException(f"Invalid XcomValuesItem passed to requestValues; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
+                        raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
             
             if (len(req_multi_items) == MULTI_INFO_REQ_MAX) or \
                (len(req_multi_items) > 0 and idx == idx_last):
@@ -296,13 +296,13 @@ class XcomApiBase:
                 req_multis.append( XcomValues(items=req_multi_items) )
                 req_multi_items = []
 
-        # Now perform all the multi requestValues requests
+        # Now perform all the multi request_values requests
         result_items: list[XcomValues] = []
         burst_start = datetime.now()
 
         for req_multi in req_multis:
             try:
-                rsp_multi = self.requestInfos(req_multi, retries=retries, timeout=timeout, verbose=verbose)
+                rsp_multi = self.request_infos(req_multi, retries=retries, timeout=timeout, verbose=verbose)
 
                 # Success; gather the returned response items
                 result_items.extend(rsp_multi.items)
@@ -310,7 +310,7 @@ class XcomApiBase:
             except XcomApiTimeoutException as tex:
                 _LOGGER.debug(f"Failed to retrieve infos via single call. {tex}")
 
-                # Fail; do not retry as single requestValue also expected to give timeout
+                # Fail; do not retry as single request_value also expected to give timeout
                 value = None
                 error = str(tex)
                 result_items.extend( [XcomValuesItem(req.datapoint, code=req.code, address=req.address, aggregation_type=req.aggregation_type, value=value, error=error) for req in req_multi.items] )
@@ -318,7 +318,7 @@ class XcomApiBase:
             except Exception as ex:
                 _LOGGER.debug(f"Failed to retrieve infos via single call; will retry retrieve one-by-one. {ex}")
 
-                # Fail; retry all items as single requestValue
+                # Fail; retry all items as single request_value
                 req_singles.extend(req_multi.items)
 
             # Periodically wait for a second. This will make sure we do not block Xcom-LAN with
@@ -327,11 +327,11 @@ class XcomApiBase:
                 time.sleep(1)
                 burst_start = datetime.now()
 
-        # Next perform all the single requestValue requests
+        # Next perform all the single request_value requests
         for req_single in req_singles:
             try:
                 error = None
-                value = self.requestValue(req_single.datapoint, req_single.address, retries=retries, timeout=timeout, verbose=verbose)
+                value = self.request_value(req_single.datapoint, req_single.address, retries=retries, timeout=timeout, verbose=verbose)
             
             except Exception as ex:
                 value = None
@@ -361,7 +361,7 @@ class XcomApiBase:
         return XcomValues(result_items)
 
 
-    def updateValue(self, parameter: XcomDatapoint, value, dstAddr = 100, retries = None, timeout = None, verbose=False):
+    def update_value(self, parameter: XcomDatapoint, value, dstAddr = 100, retries = None, timeout = None, verbose=False):
         """
         Update a param
         Returns None if not connected, otherwise returns True on success
@@ -377,12 +377,12 @@ class XcomApiBase:
             return None
 
         if type(dstAddr) is str:
-            dstAddr = XcomDeviceFamilies.getAddrByCode(dstAddr)
+            dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
 
         _LOGGER.debug(f"Update value {parameter} on addr {dstAddr}")
 
         # Compose the request and send it
-        request: XcomPackage = XcomPackage.genPackage(
+        request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomService.WRITE,
             object_type = ScomObjType.PARAMETER,
             object_id = parameter.nr,
@@ -391,7 +391,7 @@ class XcomApiBase:
             dst_addr = dstAddr
         )
 
-        response = self._sendRequest(request, retries=retries, timeout=timeout, verbose=verbose)
+        response = self._send_request(request, retries=retries, timeout=timeout, verbose=verbose)
         if response is not None:
             # No need to unpack the response value
             return True
@@ -399,7 +399,7 @@ class XcomApiBase:
         return False
     
 
-    def requestMessage(self, index:int = 0, retries = None, timeout = None, verbose=False) -> XcomMessage:
+    def request_message(self, index:int = 0, retries = None, timeout = None, verbose=False) -> XcomMessage:
         """
         Request a Message from the RCC.
         Reading a message with index 0 will return the last saved message in the flash memory of 
@@ -425,7 +425,7 @@ class XcomApiBase:
             self._msg_set = XcomFactory.create_messageset()
 
         # Compose the request and send it
-        request: XcomPackage = XcomPackage.genPackage(
+        request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomService.READ,
             object_type = ScomObjType.MESSAGE,
             object_id = index,
@@ -434,7 +434,7 @@ class XcomApiBase:
             dst_addr = ScomAddress.RCC,
         )
 
-        response = self._sendRequest(request, retries=retries, timeout=timeout, verbose=verbose)
+        response = self._send_request(request, retries=retries, timeout=timeout, verbose=verbose)
         if response is not None:
             # Unpack the response value
             try:
@@ -447,7 +447,7 @@ class XcomApiBase:
                 raise XcomApiUnpackException(msg) from None
                         
 
-    def _sendRequest(self, request: XcomPackage, retries = None, timeout = None, verbose=False):
+    def _send_request(self, request: XcomPackage, retries = None, timeout = None, verbose=False):
     
         # Sometimes the Xcom client does not seem to pickup a request
         # so retry if needed
@@ -464,18 +464,18 @@ class XcomApiBase:
                 with self._sendRequestLock:
                     ts_start = datetime.now()
 
-                    response = self._sendRequest_inner(request, timeout=timeout, verbose=verbose)
+                    response = self._send_request_inner(request, timeout=timeout, verbose=verbose)
 
                     # Update diagnostics
                     ts_end = datetime.now()
-                    self._addDiagnostics(retries = retry, duration = ts_end-ts_start)
+                    self._add_diagnostics(retries = retry, duration = ts_end-ts_start)
 
                     # Check the response
                     if response is None:
                         return None
 
-                    if response.isError():
-                        raise XcomApiResponseIsError(response.getError())
+                    if response.is_error():
+                        raise XcomApiResponseIsError(response.get_error())
                     
                     # Success
                     return response
@@ -484,13 +484,13 @@ class XcomApiBase:
                 last_exception = e
 
         # Update diagnostics in case of timeout of each retry
-        self._addDiagnostics(retries = retry)
+        self._add_diagnostics(retries = retry)
 
         if last_exception:
             raise last_exception from None
 
 
-    def _sendRequest_inner(self, request: XcomPackage, retries = None, timeout = None, verbose=False):
+    def _send_request_inner(self, request: XcomPackage, retries = None, timeout = None, verbose=False):
         """
         Send a request package to the Xcom client and wait for the correct response package
         """
@@ -498,10 +498,10 @@ class XcomApiBase:
         # Send the request package to the Xcom client
         try:
             if verbose:
-                data = request.getBytes()
+                data = request.get_bytes()
                 _LOGGER.debug(f"send {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {request}")
 
-            self._sendPackage(request)
+            self._send_package(request)
 
         except Exception as e:
             msg = f"Exception while sending request package to Xcom client: {e}"
@@ -514,26 +514,26 @@ class XcomApiBase:
 
         while datetime.now() < ts_end:
             try:
-                response = self._receivePackage()
+                response = self._receive_package()
                 
                 if response is None:
                     continue
 
-                if response.isResponse() and \
+                if response.is_response() and \
                     response.frame_data.service_id == request.frame_data.service_id and \
                     response.frame_data.service_data.object_id == request.frame_data.service_data.object_id and \
                     response.frame_data.service_data.property_id == request.frame_data.service_data.property_id:
 
                     # Yes, this is the answer to our request
                     if verbose:
-                        data = response.getBytes()
+                        data = response.get_bytes()
                         _LOGGER.debug(f"recv {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {response}")
 
                     return response
                 else:
                     # No, not an answer to our request, continue loop for next answer (or timeout)
                     if verbose:
-                        data = response.getBytes()
+                        data = response.get_bytes()
                         _LOGGER.debug(f"skip {len(data)} bytes ({binascii.hexlify(data).decode('ascii')}), decoded: {response}")
 
             except Exception as e:
@@ -545,7 +545,7 @@ class XcomApiBase:
         raise XcomApiTimeoutException(msg) from None
 
 
-    def _sendPackage(self, package: XcomPackage):
+    def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller.
@@ -555,7 +555,7 @@ class XcomApiBase:
         raise NotImplementedError()
     
 
-    def _receivePackage(self) -> XcomPackage | None:
+    def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT.
@@ -566,12 +566,12 @@ class XcomApiBase:
         raise NotImplementedError()
     
 
-    def _getNextRequestId(self) -> int:
+    def _get_next_request_id(self) -> int:
         self._request_id += 1
         return self._request_id
 
 
-    def _addDiagnostics(self, retries: int = None, duration: timedelta = None):
+    def _add_diagnostics(self, retries: int = None, duration: timedelta = None):
         if retries is not None:
             if retries not in self._diag_retries:
                 self._diag_retries[retries] = 1
@@ -586,7 +586,7 @@ class XcomApiBase:
                 self._diag_durations[duration] += 1
 
 
-    def getDiagnostics(self):
+    def get_diagnostics(self):
         return {
             "statistics": {
                 "retries": dict(sorted(self._diag_retries.items())),

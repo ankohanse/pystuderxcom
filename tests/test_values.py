@@ -14,10 +14,10 @@ async def dataset():
 
 @pytest_asyncio.fixture
 async def values_req(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    info_3023 = dataset.getByNr(3023)
-    info_3032 = dataset.getByNr(3032)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    info_3023 = dataset.get_by_nr(3023)
+    info_3032 = dataset.get_by_nr(3032)
 
     yield XcomValues([
         XcomValuesItem(info_3021, code='XT1'),
@@ -28,10 +28,10 @@ async def values_req(dataset):
 
 @pytest_asyncio.fixture
 async def values_rsp(dataset):
-    info_3021 = dataset.getByNr(3021)
-    info_3022 = dataset.getByNr(3022)
-    info_3023 = dataset.getByNr(3023)
-    info_3032 = dataset.getByNr(3032)
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    info_3023 = dataset.get_by_nr(3023)
+    info_3032 = dataset.get_by_nr(3032)
 
     yield XcomValues(
         flags = 123,
@@ -59,17 +59,17 @@ async def test_pack_unpack(name, values_fixture, request):
 
     # test pack
     if name=="request":
-        buf = values_def.packRequest()
+        buf = values_def.pack_request()
     else:
-        buf = values_def.packResponse()
+        buf = values_def.pack_response()
 
     assert buf is not None
 
     # test unpack
     if name=="request":
-        clone = XcomValues.unpackRequest(buf, dataset=dataset)
+        clone = XcomValues.unpack_request(buf, dataset=dataset)
     else:
-        clone = XcomValues.unpackResponse(buf, values_req)
+        clone = XcomValues.unpack_response(buf, values_req)
 
     assert clone is not None
     assert clone.flags == values_def.flags

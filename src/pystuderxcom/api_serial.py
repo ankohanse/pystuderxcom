@@ -116,18 +116,18 @@ class AsyncXcomApiSerial(AsyncXcomApiBase):
         _LOGGER.info(f"Stopped Xcom-232i serial Connection")
     
 
-    async def _sendPackage(self, package: XcomPackage):
+    async def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        data = package.getBytes()
+        data = package.get_bytes()
 
         self._writer.write(data)
         await self._writer.drain()
     
 
-    async def _receivePackage(self) -> XcomPackage | None:
+    async def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT
@@ -206,17 +206,17 @@ class XcomApiSerial(XcomApiBase):
         _LOGGER.info(f"Stopped Xcom-232i serial Connection")
     
 
-    def _sendPackage(self, package: XcomPackage):
+    def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        data = package.getBytes()
+        data = package.get_bytes()
 
         self._serial.write(data)
     
 
-    def _receivePackage(self) -> XcomPackage | None:
+    def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT

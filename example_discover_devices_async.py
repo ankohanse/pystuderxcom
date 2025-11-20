@@ -26,20 +26,20 @@ async def main():
         helper = AsyncXcomDiscover(api, dataset)
 
         # Discover Xcom client info
-        client_info = await helper.discoverClientInfo()
+        client_info = await helper.discover_client_info()
 
         logger.info(f"\n\n")
         logger.info(f"Discovered {client_info}")
 
         # Discover Xcom devices
-        devices = await helper.discoverDevices(getExtendedInfo=True, verbose=False)
+        devices = await helper.discover_devices(getExtendedInfo=True, verbose=False)
 
         logger.info(f"\n\n")
         for device in devices:
             logger.info(f"Discovered {device}")
 
         # Log diagnostic information
-        diag = await api.getDiagnostics()
+        diag = await api.get_diagnostics()
         logger.info(f"Diagnostics: {diag}")
 
     finally:

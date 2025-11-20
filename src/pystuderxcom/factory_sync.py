@@ -22,7 +22,7 @@ from .const import (
 from .data import (
     AsyncReader,
     SyncReader,
-    readBytes
+    read_bytes
 )
 from .datapoints import (
     XcomDatapoint,
@@ -111,7 +111,7 @@ class XcomFactory:
         ts_end = datetime.now() + timedelta(seconds=timeout)
 
         while datetime.now() < ts_end:
-            sb = readBytes(f, 1)
+            sb = read_bytes(f, 1)
             if sb == XcomPackage.start_byte:
                 break
 
@@ -120,15 +120,15 @@ class XcomFactory:
         if verbose and len(skipped) > 0:
             _LOGGER.debug(f"skip {len(skipped)} bytes until start-byte ({binascii.hexlify(skipped).decode('ascii')})")
 
-        h_raw = readBytes(f, XcomHeader.length)
-        h_chk = readBytes(f, 2)
+        h_raw = read_bytes(f, XcomHeader.length)
+        h_chk = read_bytes(f, 2)
         assert XcomPackage.checksum(h_raw) == h_chk
-        header = XcomHeader.parseBytes(h_raw)
+        header = XcomHeader.parse_bytes(h_raw)
 
-        f_raw = readBytes(f, header.data_length)
-        f_chk = readBytes(f, 2)
+        f_raw = read_bytes(f, header.data_length)
+        f_chk = read_bytes(f, 2)
         assert XcomPackage.checksum(f_raw) == f_chk
-        frame = XcomFrame.parseBytes(f_raw)
+        frame = XcomFrame.parse_bytes(f_raw)
 
         return XcomPackage(header, frame)
 

@@ -60,7 +60,7 @@ class XcomMessageSet():
         self._messages = messages
    
 
-    def getByNr(self, nr: int) -> XcomMessageDef:
+    def get_by_nr(self, nr: int) -> XcomMessageDef:
         for msg in self._messages:
             if msg.number == nr:
                 return msg
@@ -68,8 +68,8 @@ class XcomMessageSet():
         raise XcomMessageUnknownException(nr)
 
 
-    def getStringByNr(self, nr: int) -> str:
-        msg = self.getByNr(nr)
+    def str_by_nr(self, nr: int) -> str:
+        msg = self.get_by_nr(nr)
         return msg.string
 
 
@@ -90,7 +90,7 @@ class XcomMessage(XcomDataMessageRsp):
     @property
     def message_string(self):
         try:
-            return self._msg_set.getStringByNr(self.message_number)
+            return self._msg_set.str_by_nr(self.message_number)
         except:
             return f"({self.message_number}): unknown message"
     

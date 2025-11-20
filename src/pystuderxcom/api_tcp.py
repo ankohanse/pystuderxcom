@@ -209,15 +209,15 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
         _LOGGER.info(f"Stopped {name}")
     
 
-    async def _sendPackage(self, package: XcomPackage):
+    async def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        self._writer.write(package.getBytes())
+        self._writer.write(package.get_bytes())
     
 
-    async def _receivePackage(self) -> XcomPackage | None:
+    async def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT
@@ -355,15 +355,15 @@ class XcomApiTcp(XcomApiBase):
         _LOGGER.info(f"Stopped {name}")
         
 
-    def _sendPackage(self, package: XcomPackage):
+    def _send_package(self, package: XcomPackage):
         """
         Send an Xcom package.
         Exception handling is dealed with by the caller
         """
-        self._connection.send(package.getBytes())
+        self._connection.send(package.get_bytes())
     
 
-    def _receivePackage(self) -> XcomPackage | None:
+    def _receive_package(self) -> XcomPackage | None:
         """
         Attempt to receive an Xcom package. 
         Return None of nothing was received within REQ_TIMEOUT

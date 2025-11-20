@@ -47,7 +47,7 @@ class AsyncXcomDiscover:
         self._dataset = dataset
 
 
-    async def discoverDevices(self, getExtendedInfo = False, verbose = False) -> list[XcomDiscoveredDevice]:
+    async def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[XcomDiscoveredDevice]:
         """
         Discover which Studer devices can be reached via the Xcom client
         """
@@ -58,19 +58,19 @@ class AsyncXcomDiscover:
             raise XcomDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
         
         # Check presence of devices for each family
-        for family in XcomDeviceFamilies.getList():
+        for family in XcomDeviceFamilies.get_list():
 
             _LOGGER.info(f"Trying family {family.id} ({family.model})")
 
             # Get value for the specific discovery nr, or otherwise the first info nr or first param nr
-            nr = family.nrDiscover or family.nrInfosStart or family.nrParamsStart or None
+            nr = family.nr_discover or family.nr_infos_start or family.nr_params_start or None
             if not nr:
                 continue
 
             # Iterate all addresses in the family, up to the first address that is not found
-            for device_addr in range(family.addrDevicesStart, family.addrDevicesEnd+1):
+            for device_addr in range(family.addr_devices_start, family.addr_devices_end+1):
 
-                device_code = family.getCode(device_addr)
+                device_code = family.get_code(device_addr)
 
                 # Have we already discovered a device for this address?
                 device_found = next((d for d in devices if d.addr == device_addr), None)
@@ -83,16 +83,16 @@ class AsyncXcomDiscover:
                 # - the device does not exist (DEVICE_NOT_FOUND)
                 # - the device does not support the param (INVALID_DATA), used to distinguish BSP from BMS
                 try:
-                    param = self._dataset.getByNr(nr, family.idForNr)
+                    param = self._dataset.get_by_nr(nr, family.id_for_nr)
 
                     _LOGGER.info(f"Trying device {device_code} on {device_addr} for nr {nr}")
-                    value = await self._api.requestValue(param, device_addr, verbose=verbose)
+                    value = await self._api.request_value(param, device_addr, verbose=verbose)
                     if value is not None:
                         _LOGGER.info(f"  Found device {device_code} via {nr}:{device_addr}")
 
                         device = XcomDiscoveredDevice(device_code, device_addr, family.id, family.model)
                         if getExtendedInfo:
-                            device = await self.getExtendedDeviceInfo(device, verbose=verbose)
+                            device = await self.get_extended_device_info(device, verbose=verbose)
                         
                         devices.append(device)
 
@@ -108,7 +108,7 @@ class AsyncXcomDiscover:
         return devices
 
 
-    async def getExtendedDeviceInfo(self, device: XcomDiscoveredDevice, verbose=False) -> XcomDiscoveredDevice:
+    async def get_extended_device_info(self, device: XcomDiscoveredDevice, verbose=False) -> XcomDiscoveredDevice:
         # ID type
         # ID HW
         # ID HW PWR
@@ -117,20 +117,20 @@ class AsyncXcomDiscover:
         # ID FID msb/lsb
         try:
             _LOGGER.info(f"Trying to get extended device info for device {device.code})")
-            family = XcomDeviceFamilies.getById(device.family_id)
+            family = XcomDeviceFamilies.get_by_id(device.family_id)
 
-            id_type    = await self._requestValueByName("ID type",     family.id, device.addr, verbose=verbose)
-            id_hw      = await self._requestValueByName("ID HW",       family.id, device.addr, verbose=verbose)
-            id_hw_pwr  = await self._requestValueByName("ID HW PWR",   family.id, device.addr, verbose=verbose)
-            id_sw_msb  = await self._requestValueByName("ID SOFT msb", family.id, device.addr, verbose=verbose)
-            id_sw_lsb  = await self._requestValueByName("ID SOFT lsb", family.id, device.addr, verbose=verbose)
-            id_fid_msb = await self._requestValueByName("ID FID msb",  family.id, device.addr, verbose=verbose)
-            id_fid_lsb = await self._requestValueByName("ID FID lsb",  family.id, device.addr, verbose=verbose)
+            id_type    = await self._request_value_by_name("ID type",     family.id, device.addr, verbose=verbose)
+            id_hw      = await self._request_value_by_name("ID HW",       family.id, device.addr, verbose=verbose)
+            id_hw_pwr  = await self._request_value_by_name("ID HW PWR",   family.id, device.addr, verbose=verbose)
+            id_sw_msb  = await self._request_value_by_name("ID SOFT msb", family.id, device.addr, verbose=verbose)
+            id_sw_lsb  = await self._request_value_by_name("ID SOFT lsb", family.id, device.addr, verbose=verbose)
+            id_fid_msb = await self._request_value_by_name("ID FID msb",  family.id, device.addr, verbose=verbose)
+            id_fid_lsb = await self._request_value_by_name("ID FID lsb",  family.id, device.addr, verbose=verbose)
 
-            device.device_model = self._decodeType(id_type, "ID type", family.idForNr)
-            device.hw_version   = self._decodeIdHW(id_hw, id_hw_pwr)
-            device.sw_version   = self._decodeIdSW(id_sw_msb, id_sw_lsb)
-            device.fid          = self._decodeFID(id_fid_msb, id_fid_lsb)
+            device.device_model = self._decode_type(id_type, "ID type", family.id_for_nr)
+            device.hw_version   = self._decode_id_hw(id_hw, id_hw_pwr)
+            device.sw_version   = self._decode_id_sw(id_sw_msb, id_sw_lsb)
+            device.fid          = self._decode_fid(id_fid_msb, id_fid_lsb)
 
             _LOGGER.info(f"  Found extended device info: model: {device.device_model}, hw_version: {device.hw_version}, sw_version: {device.sw_version}, fid: {device.fid})")
 
@@ -140,24 +140,24 @@ class AsyncXcomDiscover:
         return device
 
 
-    async def _requestValueByName(self, param_name, family_id, device_addr, verbose=False):
+    async def _request_value_by_name(self, param_name, family_id, device_addr, verbose=False):
         try:
-            param = self._dataset.getByName(param_name, family_id)
-            return await self._api.requestValue(param, device_addr, verbose=verbose)
+            param = self._dataset.get_by_name(param_name, family_id)
+            return await self._api.request_value(param, device_addr, verbose=verbose)
         except:
             # Not all devices have these IDs
             return None
         
 
-    def _decodeType(self, val, param_name, family_id):
+    def _decode_type(self, val, param_name, family_id):
         if val is None:
             return None
 
-        param = self._dataset.getByName(param_name, family_id)
+        param = self._dataset.get_by_name(param_name, family_id)
         return param.options.get(str(int(val)), None) if param.options else None
 
 
-    def _decodeIdHW(self, cmd, pwr):
+    def _decode_id_hw(self, cmd, pwr):
         if cmd is None:
             return None
         
@@ -169,7 +169,7 @@ class AsyncXcomDiscover:
             return f"{int(bytes_cmd[0])}.{int(bytes_cmd[1])} / {int(bytes_pwr[0])}.{int(bytes_pwr[1])}"
 
 
-    def _decodeIdSW(self, msb, lsb):
+    def _decode_id_sw(self, msb, lsb):
         if msb is None or lsb is None:
             return None
         
@@ -177,7 +177,7 @@ class AsyncXcomDiscover:
         return f"{int(bytes[0])}.{int(bytes[2])}.{int(bytes[3])}"
 
 
-    def _decodeFID(self, msb, lsb):
+    def _decode_fid(self, msb, lsb):
         if msb is None or lsb is None:
             return None
         
@@ -185,7 +185,7 @@ class AsyncXcomDiscover:
         return bytes.hex(' ',4).upper()
 
 
-    async def discoverClientInfo(self, verbose=False) -> XcomDiscoveredClient:
+    async def discover_client_info(self, verbose=False) -> XcomDiscoveredClient:
         """
         Discover extended info about the remote Xcom client connected to us
         """
@@ -210,7 +210,7 @@ class AsyncXcomDiscover:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")
 
         try:
-            client_guid = await self._api.requestGuid(verbose=verbose)
+            client_guid = await self._api.request_guid(verbose=verbose)
 
             _LOGGER.info(f"  Found guid: {client_guid}")
 
@@ -224,7 +224,7 @@ class AsyncXcomDiscover:
 
 
     @staticmethod
-    async def discoverMoxaWebConfig(hint: str = None) -> str:
+    async def discover_moxa_webconfig(hint: str = None) -> str:
         """
         Discover if Moxa Web Config page can be found on the local network
         """

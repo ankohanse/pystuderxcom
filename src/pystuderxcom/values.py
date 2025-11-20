@@ -40,29 +40,29 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class XcomValuesItem():
-    datapoint: XcomDatapoint                    # Both in request and response, for requestInfos and requestValues
-    code: str|None                              # Both in request and response, for requestInfos and requestValues
-    address: int|None                           # Both in request and response, for requestInfos and requestValues
-    aggregation_type: XcomAggregationType|None  # Both in request and response, for requestInfos and requestValues
-    value: Any                                  # Only in response from requestValues()
-    error: str|None                             # Only in response from requestValues()
+    datapoint: XcomDatapoint                    # Both in request and response, for request_infos and request_values
+    code: str|None                              # Both in request and response, for request_infos and request_values
+    address: int|None                           # Both in request and response, for request_infos and request_values
+    aggregation_type: XcomAggregationType|None  # Both in request and response, for request_infos and request_values
+    value: Any                                  # Only in response from request_values()
+    error: str|None                             # Only in response from request_values()
 
     def __init__(self, datapoint: XcomDatapoint, code:str|None=None, address:int|None=None, aggregation_type:XcomAggregationType|None=None, value:Any=None, error:str|None=None):
 
         # Convert from code, addr and aggr. Code trumps addr and aggr, while addr trumps aggr.
         if code is not None:
             code = code
-            addr = XcomDeviceFamilies.getAddrByCode(code)
-            aggr = XcomDeviceFamilies.getAggregationTypeByCode(code)
+            addr = XcomDeviceFamilies.get_addr_by_code(code)
+            aggr = XcomDeviceFamilies.get_aggregationtype_by_code(code)
         
         elif address is not None:
-            code = XcomDeviceFamilies.getCodeByAddr(address, datapoint.family_id)
+            code = XcomDeviceFamilies.get_code_by_addr(address, datapoint.family_id)
             addr = address
-            aggr = XcomDeviceFamilies.getAggregationTypeByAddr(address)
+            aggr = XcomDeviceFamilies.get_aggregationtype_by_addr(address)
 
         elif aggregation_type is not None:
-            code = XcomDeviceFamilies.getCodeByAggregationType(aggregation_type, datapoint.family_id)
-            addr = XcomDeviceFamilies.getAddrByAggregationType(aggregation_type, datapoint.family_id)
+            code = XcomDeviceFamilies.get_code_by_aggregationtype(aggregation_type, datapoint.family_id)
+            addr = XcomDeviceFamilies.get_addr_by_aggregationtype(aggregation_type, datapoint.family_id)
             aggr = aggregation_type
 
         else:
@@ -79,8 +79,8 @@ class XcomValuesItem():
 
 class XcomValues():
     items: Iterable[XcomValuesItem] # Both in request and response
-    flags: int                      # Only in response from requestValues
-    datetime: int                   # Only in response from requestValues
+    flags: int                      # Only in response from request_values
+    datetime: int                   # Only in response from request_values
 
     def __init__(self, items: Iterable[XcomValuesItem], flags:int=None, datetime:int=None):
         self.items = items
@@ -88,7 +88,7 @@ class XcomValues():
         self.datetime = datetime
 
     @staticmethod
-    def unpackRequest(buf: bytes, dataset: XcomDataset):
+    def unpack_request(buf: bytes, dataset: XcomDataset):
         """Unpack request data; only used for unit-tests"""
         req = XcomDataMultiInfoReq.unpack(buf)
 
@@ -96,13 +96,13 @@ class XcomValues():
         items = list()
         for item in req.items:
             items.append(XcomValuesItem(
-                datapoint = dataset.getByNr(item.user_info_ref),
+                datapoint = dataset.get_by_nr(item.user_info_ref),
                 aggregation_type = item.aggregation_type
             ))
         return XcomValues(items)
 
     @staticmethod
-    def unpackResponse(buf: bytes, req: 'XcomValues'):
+    def unpack_response(buf: bytes, req: 'XcomValues'):
         """Unpack response data"""
         rsp = XcomDataMultiInfoRsp.unpack(buf)
 
@@ -121,14 +121,14 @@ class XcomValues():
 
         return XcomValues(items, rsp.flags, rsp.datetime)
 
-    def packRequest(self) -> bytes:
+    def pack_request(self) -> bytes:
         """Pack a request"""
         req = XcomDataMultiInfoReq(
             items = [XcomDataMultiInfoReqItem(i.datapoint.nr, i.aggregation_type) for i in self.items]
         )
         return req.pack()
             
-    def packResponse(self) -> bytes:
+    def pack_response(self) -> bytes:
         """Pack a response; only used for unit-testing"""
         rsp = XcomDataMultiInfoRsp(
             flags = self.flags,

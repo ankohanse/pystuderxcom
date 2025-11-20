@@ -19,7 +19,7 @@ def data_multi_info():
 
 @pytest.fixture
 def package_read_info():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.INFO,
         object_id = 0x01020304,
@@ -31,7 +31,7 @@ def package_read_info():
 
 @pytest.fixture
 def package_read_param():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.PARAMETER,
         object_id = 0x01020304,
@@ -43,7 +43,7 @@ def package_read_param():
 
 @pytest.fixture
 def package_write_param():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.WRITE,
         object_type = ScomObjType.PARAMETER,
         object_id = 0x01020304,
@@ -55,7 +55,7 @@ def package_write_param():
 
 @pytest.fixture
 def package_read_multiinfo(data_multi_info):
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.MULTI_INFO,
         object_id = 0x01,
@@ -67,7 +67,7 @@ def package_read_multiinfo(data_multi_info):
 
 @pytest.fixture
 def package_read_message():
-    yield XcomPackage.genPackage(
+    yield XcomPackage.gen_package(
         service_id = ScomService.READ,
         object_type = ScomObjType.MESSAGE,
         object_id = 0x01,
@@ -107,13 +107,13 @@ def test_package_props(fixture, exp_src_addr, exp_dst_addr, exp_svc_id, exp_svc_
     assert package.frame_data.service_data.property_id == exp_prop_id
     assert package.frame_data.service_data.property_data == exp_prop_data or exp_prop_data is None
 
-    # Test getBytes (calls compose)
-    buf = package.getBytes()
+    # Test get_bytes (calls compose)
+    buf = package.get_bytes()
 
     assert buf is not None
     assert len(buf) > 0
 
-    # Test parseBytes (calls parse)
+    # Test parse_bytes (calls parse)
     clone = XcomFactory.parse_package_bytes(buf)
 
     assert clone.header.src_addr == exp_src_addr
@@ -161,16 +161,16 @@ def test_package_flags(name, fixture, modify_flags, modify_data, expected_isResp
     package.header.data_length = len(package.frame_data)
 
     # Test information functions
-    assert package.isResponse() == expected_isResponse
-    assert package.isError() == expected_isError
-    assert package.getError() == expected_getError
+    assert package.is_response() == expected_isResponse
+    assert package.is_error() == expected_isError
+    assert package.get_error() == expected_getError
 
-    # Test getBytes and parseBytes
-    buf = package.getBytes()
+    # Test get_bytes and parse_bytes
+    buf = package.get_bytes()
     clone = XcomFactory.parse_package_bytes(buf)
 
-    assert clone.isResponse() == expected_isResponse
-    assert clone.isError() == expected_isError
-    assert clone.getError() == expected_getError
+    assert clone.is_response() == expected_isResponse
+    assert clone.is_error() == expected_isError
+    assert clone.get_error() == expected_getError
 
 

@@ -19,35 +19,35 @@ def test_create():
 def test_nr():
     msg_set = XcomFactory.create_messageset()
 
-    msg_def = msg_set.getByNr(0)
+    msg_def = msg_set.get_by_nr(0)
     assert msg_def.level == XcomLevel.VO
     assert msg_def.number == 0
     assert msg_def.string is not None
 
-    msg_def = msg_set.getByNr(235)
+    msg_def = msg_set.get_by_nr(235)
     assert msg_def.level == XcomLevel.VO
     assert msg_def.number == 235
     assert msg_def.string is not None
 
     with pytest.raises(XcomMessageUnknownException):
-        msg_def = msg_set.getByNr(236)
+        msg_def = msg_set.get_by_nr(236)
 
     with pytest.raises(XcomMessageUnknownException):
-        msg_def = msg_set.getByNr(-1)
+        msg_def = msg_set.get_by_nr(-1)
 
 
 @pytest.mark.asyncio
 def test_str():
     msg_set = XcomFactory.create_messageset()
 
-    s = msg_set.getStringByNr(0)
+    s = msg_set.str_by_nr(0)
     assert s is not None
 
-    s = msg_set.getStringByNr(235)
+    s = msg_set.str_by_nr(235)
     assert s is not None
 
     with pytest.raises(XcomMessageUnknownException):
-        s = msg_set.getStringByNr(236)
+        s = msg_set.str_by_nr(236)
 
     with pytest.raises(XcomMessageUnknownException):
-        s = msg_set.getStringByNr(-1)
+        s = msg_set.str_by_nr(-1)

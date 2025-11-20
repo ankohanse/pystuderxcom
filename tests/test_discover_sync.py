@@ -92,7 +92,7 @@ def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
     context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    devices = context.discover.discoverDevices(getExtendedInfo=False)
+    devices = context.discover.discover_devices(getExtendedInfo=False)
 
     # Check discovered devices
     assert len(devices) == len(exp_devices)
@@ -170,7 +170,7 @@ def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_model, ex
     context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    devices = context.discover.discoverDevices(getExtendedInfo=True)
+    devices = context.discover.discover_devices(getExtendedInfo=True)
 
     # Check discovered devices
     assert len(devices) == 1
@@ -202,7 +202,7 @@ def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_guid, request):
     context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    client_info = context.discover.discoverClientInfo()
+    client_info = context.discover.discover_client_info()
 
     # Check discovered info
     assert client_info is not None

@@ -90,7 +90,7 @@ async def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
     await context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    devices = await context.discover.discoverDevices(getExtendedInfo=False)
+    devices = await context.discover.discover_devices(getExtendedInfo=False)
 
     # Check discovered devices
     assert len(devices) == len(exp_devices)
@@ -168,7 +168,7 @@ async def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_mod
     await context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    devices = await context.discover.discoverDevices(getExtendedInfo=True)
+    devices = await context.discover.discover_devices(getExtendedInfo=True)
 
     # Check discovered devices
     assert len(devices) == 1
@@ -200,7 +200,7 @@ async def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_guid, request):
     await context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    client_info = await context.discover.discoverClientInfo()
+    client_info = await context.discover.discover_client_info()
 
     # Check discovered info
     assert client_info is not None
