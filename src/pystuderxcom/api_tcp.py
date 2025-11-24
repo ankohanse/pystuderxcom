@@ -150,7 +150,7 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
             self._server._start_serving()
             self._started = True
         else:
-            _LOGGER.info(f"Xcom TCP server already listening on port {self.listen_port}")
+            _LOGGER.info(f"Xcom TCP server already listening on port {self._listen_port}")
 
         if wait_for_connect:
             _LOGGER.info("Waiting for Xcom TCP client to connect...")
@@ -254,10 +254,10 @@ class XcomApiTcp(XcomApiBase):
         # Sanity check
         match mode:
             case XcomApiTcpMode.CLIENT:
-                if remote_ip is None: raise XcomParamException("Paramater 'remote_ip' was not specified")
-                if remote_port is None: raise XcomParamException("Paramater 'remote_port' was not specified")
+                if remote_ip is None: raise XcomParamException("Parameter 'remote_ip' was not specified")
+                if remote_port is None: raise XcomParamException("Parameter 'remote_port' was not specified")
             case XcomApiTcpMode.SERVER:
-                if listen_port is None: raise XcomParamException("Paramater 'listen_port' was not specified")
+                if listen_port is None: raise XcomParamException("Parameter 'listen_port' was not specified")
 
         # Remember our parameters
         self._mode: XcomApiTcpMode = mode
