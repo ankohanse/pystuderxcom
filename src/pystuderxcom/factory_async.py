@@ -64,22 +64,19 @@ class AsyncXcomFactory:
         # start with the 240v list as base
         datapoints = datapoints_240vac
 
-        if voltageAC == XcomVoltage.AC120:
-            # Merge the 120v list into the 240v one by replacing duplicates. This maintains the order of menu items
-            for dp120 in datapoints_120vac:
-                # already in result?
-                index = next( (idx for idx,dp240 in enumerate(datapoints) if dp120.nr == dp240.nr and dp120.family_id == dp240.family_id ), None)
-                if index is not None:
-                    datapoints[index] = dp120
-
-            _LOGGER.info(f"Using {len(datapoints)} datapoints for 120 Vac")
-
-        elif voltageAC == XcomVoltage.AC240:
-            _LOGGER.info(f"Using {len(datapoints)} datapoints for 240 Vac")
-
-        else:
-            msg = f"Unknown AC voltage: '{voltageAC}'"
-            raise Exception(msg)
+        match voltageAC:
+            case XcomVoltage.AC240:
+                pass
+            case XcomVoltage.AC120:
+                # Merge the 120v list into the 240v one by replacing duplicates. This maintains the order of menu items
+                for dp120 in datapoints_120vac:
+                    # already in result?
+                    index = next( (idx for idx,dp240 in enumerate(datapoints) if dp120.nr == dp240.nr and dp120.family_id == dp240.family_id ), None)
+                    if index is not None:
+                        datapoints[index] = dp120
+            case _:
+                msg = f"Unknown AC voltage: '{voltageAC}'"
+                raise Exception(msg)
         
         # Standard list is for 48vdc. Adapt for 12 or 24vdc if needed.
         match voltageDC:
@@ -103,6 +100,7 @@ class AsyncXcomFactory:
                 dp.max     = round(mult * dp.max    , digits) if dp.max     is not None else None
                 datapoints[idx] = dp
 
+        _LOGGER.info(f"Using {len(datapoints)} datapoints for {str(voltageAC)} and {str(voltageDC)}")
         return XcomDataset(datapoints)
 
 
