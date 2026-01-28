@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     api = XcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)    # port number configured in Xcom-LAN/Moxa NPort
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
+    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltagC.DC24 
 
     try:
         if not api.start():

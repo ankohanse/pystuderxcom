@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240) # or use XcomVoltage.AC120
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltage.DC24 
     info_3021 = dataset.get_by_nr(3021, "xt")  # the "xt" part is optional but usefull for detecting mistakes
     info_3022 = dataset.get_by_nr(3022, "xt")
     info_3023 = dataset.get_by_nr(3023, "xt")

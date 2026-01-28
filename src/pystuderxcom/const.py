@@ -46,12 +46,18 @@ class XcomApiTcpMode(StrEnum):
 class XcomVoltage(StrEnum):
     AC120 = "120 Vac"
     AC240 = "240 Vac"
+    DC12 = "12 Vdc"
+    DC24 = "24 Vdc"
+    DC48 = "48 Vdc"
 
     @staticmethod
     def from_str(s: str, default: str|None = None):
         match s.upper():
             case '120 VAC' | '120_VAC': return XcomVoltage.AC120
             case '240 VAC' | '240_VAC': return XcomVoltage.AC240
+            case '12 VDC' | '12_VDC': return XcomVoltage.DC12
+            case '24 VDC' | '24_VDC': return XcomVoltage.DC24
+            case '48 VDC' | '48_VDC': return XcomVoltage.DC48
             case _: 
                 if default is not None:
                     return default

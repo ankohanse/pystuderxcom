@@ -9,7 +9,7 @@ from pystuderxcom import AsyncXcomFactory
 
 @pytest_asyncio.fixture
 async def dataset():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     yield dataset
 
 @pytest_asyncio.fixture

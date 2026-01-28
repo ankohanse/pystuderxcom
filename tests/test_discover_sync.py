@@ -44,7 +44,7 @@ class TestContext():
         self.discover = None
 
     def start_discover(self, rsp_dest, rsp_dict):
-        self.dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
+        self.dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
         self.api = TestApi(on_receive_handler=on_receive, rsp_dest=rsp_dest, rsp_dict=rsp_dict)
     
         self.discover = XcomDiscover(self.api, self.dataset)    

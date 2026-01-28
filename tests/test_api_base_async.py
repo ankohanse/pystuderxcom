@@ -75,7 +75,7 @@ async def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_ob
 )
 async def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     async def on_receive(api: AsyncTestApi):
@@ -126,7 +126,7 @@ async def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id,
 )
 async def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     async def on_receive(api: AsyncTestApi):
@@ -167,7 +167,7 @@ async def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst
 
 @pytest_asyncio.fixture
 async def dataset():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     yield dataset
 
 @pytest_asyncio.fixture

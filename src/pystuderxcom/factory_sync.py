@@ -9,7 +9,9 @@
 import asyncio
 import binascii
 from datetime import datetime, timedelta
+import decimal
 import logging
+import math
 import orjson
 
 from aiofiles import open as aiofiles_open
@@ -45,7 +47,7 @@ _LOGGER = logging.getLogger(__name__)
 class XcomFactory:
 
     @staticmethod
-    def create_dataset(voltage: str) -> XcomDataset:
+    def create_dataset(voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48) -> XcomDataset:
         """
         The actual XcomDataset list is kept in a separate json file to reduce the memory size needed to load the integration.
         The list is only loaded during config flow and during initial startup, and then released again.
@@ -64,7 +66,7 @@ class XcomFactory:
         # start with the 240v list as base
         datapoints = datapoints_240vac
 
-        if voltage == XcomVoltage.AC120:
+        if voltageAC == XcomVoltage.AC120:
             # Merge the 120v list into the 240v one by replacing duplicates. This maintains the order of menu items
             for dp120 in datapoints_120vac:
                 # already in result?
@@ -74,12 +76,34 @@ class XcomFactory:
 
             _LOGGER.info(f"Using {len(datapoints)} datapoints for 120 Vac")
 
-        elif voltage == XcomVoltage.AC240:
+        elif voltageAC == XcomVoltage.AC240:
             _LOGGER.info(f"Using {len(datapoints)} datapoints for 240 Vac")
 
         else:
-            msg = f"Unknown voltage: '{voltage}'"
+            msg = f"Unknown AC voltage: '{voltageAC}'"
             raise Exception(msg)
+        
+        # Standard list is for 48vdc. Adapt for 12 or 24vdc if needed.
+        match voltageDC:
+            case XcomVoltage.DC48: mult = 1.0
+            case XcomVoltage.DC24: mult = 0.5
+            case XcomVoltage.DC12: mult = 0.25
+            case _: 
+                msg = f"Unknown DC voltage: '{voltageDC}'"
+                raise Exception(msg)
+            
+        for idx,dp in enumerate(datapoints):
+            if dp.unit=="Vdc" and \
+               dp.min is not None and dp.min > 24.0 and \
+               dp.max is not None and dp.max < 96.0:
+
+                d = decimal.Decimal(str(dp.inc)) if dp.inc is not None else decimal('1')
+                digits = d.as_tuple().exponent * -1
+
+                dp.default = round(mult * dp.default, digits) if dp.default is not None else None
+                dp.min     = round(mult * dp.min    , digits) if dp.min     is not None else None
+                dp.max     = round(mult * dp.max    , digits) if dp.max     is not None else None
+                datapoints[idx] = dp
 
         return XcomDataset(datapoints)
 

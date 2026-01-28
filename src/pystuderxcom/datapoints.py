@@ -12,7 +12,6 @@ from .const import (
     XcomLevel,
     XcomFormat,
     XcomCategory,
-    XcomVoltage,
 )
 
 

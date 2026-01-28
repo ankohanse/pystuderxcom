@@ -42,7 +42,7 @@ class TestContext():
         self.discover = None
 
     async def start_discover(self, rsp_dest, rsp_dict):
-        self.dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+        self.dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
         self.api = AsyncTestApi(on_receive_handler=on_receive, rsp_dest=rsp_dest, rsp_dict=rsp_dict)
     
         self.discover = AsyncXcomDiscover(self.api, self.dataset)    

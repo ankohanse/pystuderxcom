@@ -13,17 +13,26 @@ from pystuderxcom import (
 
 
 @pytest.mark.asyncio
-async def test_create():
-    dataset120 = await AsyncXcomFactory.create_dataset(XcomVoltage.AC120)    
-    dataset240 = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+@pytest.mark.parametrize(
+    "voltageAC, voltageDC, exp_len",
+    [
+        (XcomVoltage.AC120, XcomVoltage.DC12, 1451),
+        (XcomVoltage.AC120, XcomVoltage.DC24, 1451),
+        (XcomVoltage.AC120, XcomVoltage.DC48, 1451),
+        (XcomVoltage.AC240, XcomVoltage.DC12, 1451),
+        (XcomVoltage.AC240, XcomVoltage.DC24, 1451),
+        (XcomVoltage.AC240, XcomVoltage.DC48, 1451),
+    ]
+)
+async def test_create(voltageAC, voltageDC, exp_len):
+    dataset = await AsyncXcomFactory.create_dataset(voltageAC, voltageDC)    
 
-    assert len(dataset120._datapoints) == 1451
-    assert len(dataset240._datapoints) == 1451
+    assert len(dataset._datapoints) == exp_len
 
 
 @pytest.mark.asyncio
 async def test_nr():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
 
     param = dataset.get_by_nr(1107)
     assert param.family_id == "xt"
@@ -68,8 +77,33 @@ async def test_nr():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "voltageAC, voltageDC, nr, exp_unit, exp_def, exp_min, exp_max",
+    [
+        (XcomVoltage.AC120, XcomVoltage.DC48, 1286, "Vac", 120, 55, 140),
+        (XcomVoltage.AC240, XcomVoltage.DC48, 1286, "Vac", 230, 110, 280),
+
+        (XcomVoltage.AC120, XcomVoltage.DC12, 1108, "Vdc", 11.6, 9.0, 18.0),
+        (XcomVoltage.AC120, XcomVoltage.DC24, 1108, "Vdc", 23.1, 18.0, 36.0),
+        (XcomVoltage.AC120, XcomVoltage.DC48, 1108, "Vdc", 46.3, 36.0, 72.0),
+        (XcomVoltage.AC240, XcomVoltage.DC12, 1108, "Vdc", 11.6, 9.0, 18.0),
+        (XcomVoltage.AC240, XcomVoltage.DC24, 1108, "Vdc", 23.1, 18.0, 36.0),
+        (XcomVoltage.AC240, XcomVoltage.DC48, 1108, "Vdc", 46.3, 36.0, 72.0),
+    ]
+)
+async def test_voltage(voltageAC, voltageDC, nr, exp_unit, exp_def, exp_min, exp_max):
+    dataset = await AsyncXcomFactory.create_dataset(voltageAC, voltageDC)    
+    
+    param = dataset.get_by_nr(nr)
+    assert param.unit == exp_unit
+    assert param.default == exp_def
+    assert param.min == exp_min
+    assert param.max == exp_max
+
+
+@pytest.mark.asyncio
 async def test_enum():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
 
     param = dataset.get_by_nr(1552)
     assert param.options != None
@@ -89,7 +123,7 @@ async def test_enum():
 
 @pytest.mark.asyncio
 async def test_menu():
-    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     
     root_items = dataset.get_menu_items(0)
     assert len(root_items) == 12

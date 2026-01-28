@@ -77,7 +77,7 @@ def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, 
 )
 def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     def on_receive(api: TestApi):
@@ -128,7 +128,7 @@ def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_o
 )
 def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     def on_receive(api: TestApi):
@@ -169,7 +169,7 @@ def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr,
 
 @pytest.fixture
 def dataset():
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240)
+    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     yield dataset
 
 @pytest.fixture
