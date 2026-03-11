@@ -19,7 +19,7 @@ from .messages import XcomMessage, XcomMessageUnknownException
 from .values import XcomValues, XcomValuesItem
 
 # For unit testing
-from .const import ScomObjType, ScomObjId, ScomService, ScomQspId, ScomQspLevel, ScomAddress, ScomErrorCode
+from .const import ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomServiceFlag, ScomQspId, ScomQspLevel, ScomAddress, ScomErrorCode
 from .data import XcomData, XcomDataMessageRsp, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem
 from .messages import XcomMessageDef, XcomMessageSet
 from .protocol import XcomHeader, XcomFrame, XcomService, XcomPackage

@@ -39,16 +39,26 @@ def main():
         value = api.request_guid()
         logger.info(f"Installation Guid: {value}")
 
+        # Show flags. 
+        # These become available after the first request (value, guid, message) and updated after each next request
+        logger.info(f"")
+        logger.info(f"Status flags:")
+        logger.info(f"  is new datalogger file present: {api.is_new_datalogger_file_present}")
+        logger.info(f"  is sd-card full:                {api.is_sd_card_full}")
+        logger.info(f"  is sd-card present:             {api.is_sd_card_present}")
+        logger.info(f"  was rcc reseted:                {api.was_rcc_reseted}")
+        logger.info(f"  is message pending:             {api.is_message_pending}")
+
         # Retrieve messages
         logger.info(f"")
-        logger.info(f"Retrieve messages")
+        logger.info(f"Retrieve messages (10 most recent)")
 
-        # Retrieving message #0 returns the last saved message. 
-        # But be aware that it will also erase the flag that there are new messages
+        # Retrieving message #0 returns the most recent message.
+        # But be aware that it will also clear the 'is_message_pending' flag
         idx = 0
-        for idx in range(0, 0xFFFFFFFF):
+        for idx in range(0, 10):
             msg = api.request_message(idx)
-            logger.info(f"msg #{idx} from {msg.source_address} at {datetime.fromtimestamp(msg.timestamp)}: {msg.message_string}")
+            logger.info(f"  msg #{idx} from {msg.source_address} at {datetime.fromtimestamp(msg.timestamp)}: {msg.message_string}")
 
             if msg.message_total <= 1:
                 break

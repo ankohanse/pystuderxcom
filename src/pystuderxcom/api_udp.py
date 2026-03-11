@@ -34,7 +34,7 @@ from .const import (
     XcomAggregationType,
     ScomObjType,
     ScomObjId,
-    ScomService,
+    ScomServiceId,
     ScomQspId,
     ScomErrorCode,
     XcomParamException,

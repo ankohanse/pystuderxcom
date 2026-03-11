@@ -11,7 +11,7 @@ from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
-from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomService, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
+from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
 from . import AsyncTestApi, TestApi
 from . import AsyncTaskHelper, TaskHelper
@@ -19,11 +19,48 @@ from . import AsyncTaskHelper, TaskHelper
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    "name, do_req, rsp_frm_flags, exp_imp, exp_wrr, exp_iscp, exp_iscf, exp_indlfp",
+    [
+        ("flags none",                False, 0x00,                                     None,  None,  None,  None,  None),
+        ("flags false",               True,  0x00,                                     False, False, False, False, False),
+        ("flags is_message_pending",  True,  ScomFrameFlag.IS_MESSAGE_PENDING,         True,  False, False, False, False),
+        ("flags was_rcc_reseted",     True,  ScomFrameFlag.WAS_RCC_RESETED,            False, True,  False, False, False),
+        ("flags is_sd_card_present",  True,  ScomFrameFlag.IS_SD_CARD_PRESENT,         False, False, True,  False, False),
+        ("flags is_sd_card_full",     True,  ScomFrameFlag.IS_SD_CARD_FULL,            False, False, False, True,  False),
+        ("flags is_log_file_present", True,  ScomFrameFlag.IS_DATALOGGER_FILE_PRESENT, False, False, False, False, True ),
+    ]
+)
+def test_flags(name, do_req, rsp_frm_flags, exp_imp, exp_wrr, exp_iscp, exp_iscf, exp_indlfp, request):
+
+    def on_receive(api: TestApi):
+        """Helper to turn a request into a response"""
+        api.response_package = copy.deepcopy(api.request_package)
+
+        api.response_package.header.frame_flags = rsp_frm_flags
+        api.response_package.frame_data.service_flags = 0x02
+        api.response_package.frame_data.service_data.property_data = XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID)
+        api.response_package.header.data_length = len(api.response_package.frame_data)
+
+    # Run the request
+    api = TestApi(on_receive_handler=on_receive)
+
+    if do_req:
+        value = api.request_guid(retries=1, timeout=5)
+
+    assert api.is_message_pending == exp_imp
+    assert api.was_rcc_reseted == exp_wrr
+    assert api.is_sd_card_present == exp_iscp
+    assert api.is_sd_card_full == exp_iscf
+    assert api.is_new_datalogger_file_present == exp_indlfp
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     "name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
     [
-        ("request guid ok",      501, ScomService.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x02, XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID), "00112233-4455-6677-8899-aabbccddeeff",  None),
-        ("request guid err",     501, ScomService.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR),            None, XcomApiResponseIsError),
-        ("request guid timeout", 501, ScomService.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x00, XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID), None, XcomApiTimeoutException),
+        ("request guid ok",      501, ScomServiceId.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x02, XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID), "00112233-4455-6677-8899-aabbccddeeff",  None),
+        ("request guid err",     501, ScomServiceId.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR),            None, XcomApiResponseIsError),
+        ("request guid timeout", 501, ScomServiceId.READ, ScomObjType.GUID, ScomObjId.NONE, ScomQspId.NONE, 0x00, XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID), None, XcomApiTimeoutException),
     ]
 )
 def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
@@ -68,11 +105,11 @@ def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, 
 @pytest.mark.parametrize(
     "name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
     [
-        ("request info ok",      3000, 100, 100, ScomService.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), 1234.0, None),
-        ("request info err",     3000, 100, 100, ScomService.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
-        ("request info timeout", 3000, 100, 100, ScomService.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x00, XcomData.pack(1234.0, XcomFormat.FLOAT), None, XcomApiTimeoutException),
-        ("request param ok",     1107, 100, 100, ScomService.READ, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), 1234.0, None),
-        ("request param vo",     5012, 501, 501, ScomService.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, XcomFormat.INT32), 32, None),
+        ("request info ok",      3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), 1234.0, None),
+        ("request info err",     3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
+        ("request info timeout", 3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x00, XcomData.pack(1234.0, XcomFormat.FLOAT), None, XcomApiTimeoutException),
+        ("request param ok",     1107, 100, 100, ScomServiceId.READ, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), 1234.0, None),
+        ("request param vo",     5012, 501, 501, ScomServiceId.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, XcomFormat.INT32), 32, None),
     ]
 )
 def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
@@ -120,10 +157,10 @@ def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_o
 @pytest.mark.parametrize(
     "name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
     [
-        ("update param ok",      1107, 100, 4.0,  100, ScomService.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, b'', True, None),
-        ("update param err",     1107, 100, 4.0,  100, ScomService.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.WRITE_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
-        ("update param timeout", 1107, 100, 4.0,  100, ScomService.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x00, b'', True, XcomApiTimeoutException),
-        ("update param vo",      5012, 501, 32,   501, ScomService.WRITE, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.ACCESS_DENIED, XcomFormat.ERROR), None, XcomApiResponseIsError),
+        ("update param ok",      1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, b'', True, None),
+        ("update param err",     1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.WRITE_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
+        ("update param timeout", 1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x00, b'', True, XcomApiTimeoutException),
+        ("update param vo",      5012, 501, 32,   501, ScomServiceId.WRITE, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.ACCESS_DENIED, XcomFormat.ERROR), None, XcomApiResponseIsError),
     ]
 )
 def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
@@ -273,14 +310,14 @@ def data_infos_params_aggr(dataset):
 @pytest.mark.parametrize(
     "name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except",
     [
-        ("request infos dev ok",       "data_infos_dev",         True,  ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, None),
-        ("request infos dev err",      "data_infos_dev",         True,  ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomApiResponseIsError),
-        ("request infos dev timeout",  "data_infos_dev",         False, ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomApiTimeoutException),
-        ("request infos aggr ok",      "data_infos_aggr",        True,  ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, None),
-        ("request infos aggr err",     "data_infos_aggr",        True,  ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomApiResponseIsError),
-        ("request infos aggr timeout", "data_infos_aggr",        False, ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomApiTimeoutException),
-        ("request infos params err",   "data_infos_params_dev",  False, ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
-        ("request infos params aggr",  "data_infos_params_aggr", False, ScomAddress.SOURCE, 501, ScomService.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
+        ("request infos dev ok",       "data_infos_dev",         True,  ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, None),
+        ("request infos dev err",      "data_infos_dev",         True,  ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomApiResponseIsError),
+        ("request infos dev timeout",  "data_infos_dev",         False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomApiTimeoutException),
+        ("request infos aggr ok",      "data_infos_aggr",        True,  ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, None),
+        ("request infos aggr err",     "data_infos_aggr",        True,  ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomApiResponseIsError),
+        ("request infos aggr timeout", "data_infos_aggr",        False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomApiTimeoutException),
+        ("request infos params err",   "data_infos_params_dev",  False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
+        ("request infos params aggr",  "data_infos_params_aggr", False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
     ]
 )
 def test_request_infos(name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except, request):
@@ -431,9 +468,9 @@ def data_message():
 @pytest.mark.parametrize(
     "name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
     [
-        ("request msg ok",      1, ScomService.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x02, "data_message", None, None),
-        ("request msg err",     1, ScomService.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
-        ("request msg timeout", 1, ScomService.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x00, "data_message", None, XcomApiTimeoutException),
+        ("request msg ok",      1, ScomServiceId.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x02, "data_message", None, None),
+        ("request msg err",     1, ScomServiceId.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR), None, XcomApiResponseIsError),
+        ("request msg timeout", 1, ScomServiceId.READ, ScomObjType.MESSAGE, 1, ScomQspId.NONE, 0x00, "data_message", None, XcomApiTimeoutException),
     ]
 )
 def test_request_message(name, test_nr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):

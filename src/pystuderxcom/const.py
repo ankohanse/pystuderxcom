@@ -220,16 +220,28 @@ class ScomObjType:
             msg = f"Unknown obj_type: '{s}'"
             raise Exception(msg)
 
+### frame flags (internal)
+class ScomFrameFlag:
+    IS_MESSAGE_PENDING          = 0x01
+    WAS_RCC_RESETED             = 0x02
+    IS_SD_CARD_PRESENT          = 0x04
+    IS_SD_CARD_FULL             = 0x08
+    IS_DATALOGGER_FILE_PRESENT  = 0x10
+
 ### object_id (internal)
 class ScomObjId:
     NONE        = 0x00000000
     MULTI_INFO  = 0x00000001
 
-
-### service_flags (internal)
-class ScomService:
+### service_id (internal)
+class ScomServiceId:
     READ   = 0x01
     WRITE  = 0x02
+
+### service_flags (internal)
+class ScomServiceFlag:
+    IS_ERROR    = 0x01
+    IS_RESPONSE = 0x02
 
 ### property_id (internal)
 class ScomQspId:

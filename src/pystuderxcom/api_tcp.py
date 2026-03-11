@@ -33,7 +33,7 @@ from .const import (
     ScomAddress,
     ScomObjType,
     ScomObjId,
-    ScomService,
+    ScomServiceId,
     ScomQspId,
     ScomErrorCode,
     XcomParamException,

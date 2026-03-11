@@ -20,6 +20,7 @@ from .const import (
     XcomFormat,
     ScomAddress,
     ScomErrorCode,
+    ScomServiceFlag,
 )
 from .data import (
     XcomData,
@@ -215,10 +216,10 @@ class XcomPackage():
         return buf.getvalue()
     
     def is_response(self) -> bool:
-        return (self.frame_data.service_flags & 2) >> 1 == 1
+        return self.frame_data.service_flags & ScomServiceFlag.IS_RESPONSE != 0
 
     def is_error(self) -> bool:
-        return self.frame_data.service_flags & 1 == 1
+        return self.frame_data.service_flags & ScomServiceFlag.IS_ERROR != 0
 
     def get_error(self) -> str:
         if self.is_error():

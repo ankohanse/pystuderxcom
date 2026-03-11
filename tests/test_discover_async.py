@@ -8,7 +8,7 @@ from pystuderxcom import AsyncXcomDiscover, XcomDiscover
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
-from pystuderxcom import XcomVoltage, XcomFormat, ScomService, ScomObjType, ScomQspId, ScomErrorCode
+from pystuderxcom import XcomVoltage, XcomFormat, ScomServiceId, ScomObjType, ScomQspId, ScomErrorCode
 from . import AsyncTestApi, TestApi
 
 

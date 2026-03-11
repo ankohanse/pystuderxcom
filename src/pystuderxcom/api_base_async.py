@@ -16,9 +16,10 @@ from .const import (
     XcomFormat,
     XcomCategory,
     XcomAggregationType,
+    ScomFrameFlag,
     ScomObjType,
     ScomObjId,
-    ScomService,
+    ScomServiceId,
     ScomQspId,
     XcomApiReadException,
     XcomApiWriteException,
@@ -77,6 +78,7 @@ class AsyncXcomApiBase:
 
         # Cached values
         self._msg_set = None
+        self._latest_frame_flags: int = None   # most recent received frame flags, used for various status flags
 
         # Diagnostics gathering
         self._diag_retries = {}
@@ -108,6 +110,31 @@ class AsyncXcomApiBase:
         """Returns the IP address of the connected Xcom client, otherwise None"""
         return self._remote_ip
     
+    @property
+    def is_message_pending(self) -> bool|None:
+        """Returns whether a message is pending. Only available once a response packet has been received."""
+        return self._latest_frame_flags & ScomFrameFlag.IS_MESSAGE_PENDING != 0 if self._latest_frame_flags is not None else None
+    
+    @property
+    def was_rcc_reseted(self) -> bool|None:
+        """Returns whther the RCC was reseted. Only available once a response packet has been received."""
+        return self._latest_frame_flags & ScomFrameFlag.WAS_RCC_RESETED != 0 if self._latest_frame_flags is not None else None
+    
+    @property
+    def is_sd_card_present(self) -> bool|None:
+        """Returns whether a sd-card is present. Only available once a response packet has been received."""
+        return self._latest_frame_flags & ScomFrameFlag.IS_SD_CARD_PRESENT != 0 if self._latest_frame_flags is not None else None
+    
+    @property
+    def is_sd_card_full(self) -> bool|None:
+        """Returns whether the sd-card is full. Only available once a response packet has been received."""
+        return self._latest_frame_flags & ScomFrameFlag.IS_SD_CARD_FULL != 0 if self._latest_frame_flags is not None else None
+    
+    @property
+    def is_new_datalogger_file_present(self) -> bool|None:
+        """Returns whether a new datalogger file is present. Only available once a response packet has been received."""
+        return self._latest_frame_flags & ScomFrameFlag.IS_DATALOGGER_FILE_PRESENT != 0 if self._latest_frame_flags is not None else None
+
 
     async def _wait_until_connected(self, timeout) -> bool:
         """Wait for Xcom client to connect. Or timout."""
@@ -139,7 +166,7 @@ class AsyncXcomApiBase:
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
-            service_id = ScomService.READ,
+            service_id = ScomServiceId.READ,
             object_type = ScomObjType.GUID,
             object_id = ScomObjId.NONE,
             property_id = ScomQspId.NONE,
@@ -175,7 +202,7 @@ class AsyncXcomApiBase:
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
-            service_id = ScomService.READ,
+            service_id = ScomServiceId.READ,
             object_type = ScomObjType.PARAMETER if parameter.category == XcomCategory.PARAMETER else ScomObjType.INFO,
             object_id = parameter.nr,
             property_id = ScomQspId.UNSAVED_VALUE if parameter.category == XcomCategory.PARAMETER else ScomQspId.VALUE,
@@ -220,7 +247,7 @@ class AsyncXcomApiBase:
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
-            service_id = ScomService.READ,
+            service_id = ScomServiceId.READ,
             object_type = ScomObjType.MULTI_INFO,
             object_id = ScomObjId.MULTI_INFO,
             property_id = self._get_next_request_id() & 0xffff,
@@ -379,7 +406,7 @@ class AsyncXcomApiBase:
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
-            service_id = ScomService.WRITE,
+            service_id = ScomServiceId.WRITE,
             object_type = ScomObjType.PARAMETER,
             object_id = parameter.nr,
             property_id = ScomQspId.UNSAVED_VALUE,
@@ -422,7 +449,7 @@ class AsyncXcomApiBase:
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
-            service_id = ScomService.READ,
+            service_id = ScomServiceId.READ,
             object_type = ScomObjType.MESSAGE,
             object_id = index,
             property_id = ScomQspId.NONE,
@@ -515,6 +542,11 @@ class AsyncXcomApiBase:
                 if response is None:
                     continue
 
+                # Remember most recent received frame flags, used for various status flags
+                if response.is_response():
+                    self._latest_frame_flags = response.header.frame_flags
+
+                # Does this response match our request
                 if response.is_response() and \
                     response.frame_data.service_id == request.frame_data.service_id and \
                     response.frame_data.service_data.object_id == request.frame_data.service_data.object_id and \
