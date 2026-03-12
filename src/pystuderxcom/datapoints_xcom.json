@@ -1,6 +1,9 @@
 [
     {  "_rem": "Extra 'virtual' Xcom datapoints"},
 
+    {  "_rem": "These are not included in 'Studer Technical Specification - Xtender serial protocol appendix'"},
+    {  "_rem": "But are defined by us based on other parameters exposed by the Xcom protocol"},
+
     {  "_rem": "Column descriptions:"},
     {  "_rem": "  fam  = Device Family"},
     {  "_rem": "  lvl  = User level required to access the param or info"},

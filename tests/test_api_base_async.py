@@ -9,8 +9,9 @@ from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
-from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
+from pystuderxcom import XcomVoltage, XcomFormat, XcomAggregationType, XcomTarget, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
+
 from . import AsyncTestApi, TestApi
 from . import AsyncTaskHelper, TaskHelper
 
@@ -63,6 +64,7 @@ async def data_message():
 @pytest.mark.parametrize(
     "name, test_nr, test_dest, rsp_frm_flags, rsp_data, exp_value, exp_except",
     [
+        ("request virtual err",                 3000,  100, 0x00,                                     None, None,  XcomParamException),
         ("request virtual false",               99000, 990, 0x00,                                     None, False, None),
         ("request virtual is_message_pending",  99000, 990, ScomFrameFlag.IS_MESSAGE_PENDING,         None, True,  None),
         ("request virtual was_rcc_reseted",     99001, 990, ScomFrameFlag.WAS_RCC_RESETED,            None, True,  None),
@@ -99,7 +101,6 @@ async def test_request_virtual(name, test_nr, test_dest, rsp_frm_flags, rsp_data
 
     if exp_except == None:
         value = await api.request_virtual(param, test_dest, retries=1, timeout=5)
-
         assert value == exp_value
     else:
         with pytest.raises(exp_except):
@@ -162,6 +163,7 @@ async def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_ob
         ("request info timeout", 3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x00, XcomData.pack(1234.0, XcomFormat.FLOAT), None, XcomApiTimeoutException),
         ("request param ok",     1107, 100, 100, ScomServiceId.READ, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), 1234.0, None),
         ("request param vo",     5012, 501, 501, ScomServiceId.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, XcomFormat.INT32), 32, None),
+        ("request virtual err", 99003, 990, 990, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x02, XcomData.pack(1234.0, XcomFormat.FLOAT), None, XcomParamException),
     ]
 )
 async def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
@@ -173,6 +175,7 @@ async def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id,
         """Helper to turn a request into a response"""
         api.response_package = copy.deepcopy(api.request_package)
 
+        api.response_package.header.frame_flags = ScomFrameFlag.IS_MESSAGE_PENDING
         api.response_package.frame_data.service_flags = rsp_flags
         api.response_package.frame_data.service_data.property_data = rsp_data
         api.response_package.header.data_length = len(api.response_package.frame_data)
@@ -281,9 +284,12 @@ async def data_infos_dev(dataset):
             XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.DEVICE1, value=78.9),
         ]
     )
-    rsp_single_val = None
-    
-    yield req_data, rsp_multi, rsp_single_val
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[]
+    )
+    yield req_data, rsp_multi, rsp_single
 
 @pytest_asyncio.fixture
 async def data_infos_aggr(dataset):
@@ -305,9 +311,12 @@ async def data_infos_aggr(dataset):
             XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.SUM, value=78.9),
         ]
     )
-    rsp_single_val = None
-    
-    yield req_data, rsp_multi, rsp_single_val
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[]
+    )
+    yield req_data, rsp_multi, rsp_single
 
 @pytest_asyncio.fixture
 async def data_infos_params_dev(dataset):
@@ -328,9 +337,14 @@ async def data_infos_params_dev(dataset):
             XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
         ]
     )
-    rsp_single_val = 1234.0
-
-    yield req_data, rsp_multi, rsp_single_val
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+        ]
+    )
+    yield req_data, rsp_multi, rsp_single
 
 
 @pytest_asyncio.fixture
@@ -352,13 +366,82 @@ async def data_infos_params_aggr(dataset):
             XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
         ]
     )
-    rsp_single_val = 1234.0
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+        ]
+    )
+    yield req_data, rsp_multi, rsp_single
 
-    yield req_data, rsp_multi, rsp_single_val
+
+@pytest_asyncio.fixture
+async def data_infos_virt_dev(dataset):
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    param_1107 = dataset.get_by_nr(1107)
+    info_99003 = dataset.get_by_nr(99003)
+
+    req_data = XcomValues([
+        XcomValuesItem(info_3021, code="XT1"),
+        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1),
+        XcomValuesItem(param_1107, address=101),
+        XcomValuesItem(info_99003, code="XCOM"), # Make sure to have another single request prior to virtual
+    ])
+    rsp_multi = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
+        ]
+    )
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValuesItem(info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
+        ]
+    )
+    yield req_data, rsp_multi, rsp_single
+
+
+@pytest_asyncio.fixture
+async def data_infos_virt_aggr(dataset):
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    param_1107 = dataset.get_by_nr(1107)
+    info_99003 = dataset.get_by_nr(99003)
+
+    req_data = XcomValues([
+        XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
+        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE),
+        XcomValuesItem(param_1107, address=101),
+        XcomValuesItem(info_99003, code="XCOM"), # Make sure to have another single request prior to virtual
+    ])
+    rsp_multi = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
+        ]
+    )
+    rsp_single = XcomValues(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValuesItem(info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
+        ]
+    )
+    yield req_data, rsp_multi, rsp_single
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr")
+@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr", "data_infos_virt_dev", "data_infos_virt_aggr")
 @pytest.mark.parametrize(
     "name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except",
     [
@@ -370,6 +453,8 @@ async def data_infos_params_aggr(dataset):
         ("request infos aggr timeout", "data_infos_aggr",        False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomApiTimeoutException),
         ("request infos params err",   "data_infos_params_dev",  False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
         ("request infos params aggr",  "data_infos_params_aggr", False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
+        ("request infos virt err",     "data_infos_virt_dev",    False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x03, XcomParamException),
+        ("request infos virt aggr",    "data_infos_virt_aggr",   False, ScomAddress.SOURCE, 501, ScomServiceId.READ, ScomObjType.MULTI_INFO, ScomObjId.MULTI_INFO, ScomQspId.MULTI_INFO, 0x02, XcomParamException),
     ]
 )
 async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, exp_except, request):
@@ -383,6 +468,7 @@ async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, ex
         else:
             api.response_package = copy.deepcopy(api.request_package)
 
+            api.response_package.header.frame_flags = 0x1F
             api.response_package.frame_data.service_flags = rsp_flags
             if rsp_flags & 0x01:
                 api.response_package.frame_data.service_data.property_data = XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, XcomFormat.ERROR)
@@ -435,7 +521,7 @@ async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, ex
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr")
+@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr", "data_infos_virt_dev", "data_infos_virt_aggr")
 @pytest.mark.parametrize(
     "name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except",
     [
@@ -445,11 +531,13 @@ async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, ex
         ("request values infos aggr",     "data_infos_aggr",        False, 0x02, False, False, XcomParamException),
         ("request values params ok",      "data_infos_params_dev",  True,  0x02, True,  False, None),
         ("request values params aggr",    "data_infos_params_aggr", False, 0x02, False, False, XcomParamException),
+        ("request values virt ok",        "data_infos_virt_dev",    True,  0x02, True,  False, None),
+        ("request values virt aggr",      "data_infos_virt_aggr",   False, 0x02, False, False, XcomParamException),
     ]
 )
 async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except, request):
     
-    req_data, exp_rsp_multi, exp_rsp_single_val = request.getfixturevalue(values_fixture)
+    req_data, exp_rsp_multi, exp_rsp_single = request.getfixturevalue(values_fixture)
 
     async def on_receive(api: AsyncTestApi):
         """Helper to turn a request into a response"""
@@ -457,6 +545,7 @@ async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_
             api.response_package = None
         else:
             api.response_package = copy.deepcopy(api.request_package)
+            api.response_package.header.frame_flags = 0x1F
             api.response_package.frame_data.service_flags = rsp_flags
 
             if rsp_flags & 0x01:
@@ -466,7 +555,8 @@ async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_
                 api.response_package.frame_data.service_data.property_data = exp_rsp_multi.pack_response()
 
             else:
-                api.response_package.frame_data.service_data.property_data = XcomData.pack(exp_rsp_single_val, XcomFormat.FLOAT)
+                item = next( (i for i in exp_rsp_single.items if i.datapoint.nr == api.request_package.frame_data.service_data.object_id), None)
+                api.response_package.frame_data.service_data.property_data = XcomData.pack(item.value, XcomFormat.FLOAT)
 
             api.response_package.header.data_length = len(api.response_package.frame_data)
 
@@ -494,7 +584,11 @@ async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_
                 if exp_item is not None:
                     exp_val = exp_item.value
                 else:
-                    exp_val = exp_rsp_single_val
+                    exp_item = next((i for i in exp_rsp_single.items if i.datapoint.nr==item.datapoint.nr and i.aggregation_type==item.aggregation_type), None)
+                    if exp_item is not None:
+                        exp_val = exp_item.value
+                    else:
+                        exp_val = None
 
                 match item.datapoint.format:
                     case XcomFormat.FLOAT:

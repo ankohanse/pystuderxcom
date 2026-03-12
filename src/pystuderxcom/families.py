@@ -139,10 +139,10 @@ class XcomDeviceFamilies:
     )
     XCOM = XcomDeviceFamily(    
         "xcom", "xcom",        # virtual device to expose additional values in a uniform way
-        "Xcom", 
+        "Xcom-LAN/232i", 
         990,                   # addr multicast to all devices (write only)
         990, 990,              # addr devices,  start to end
-        0, 0,                  # nr for params, start to end
+        98000, 98999,          # nr for params, start to end
         99000, 99999,          # nr for infos,  start to end 
         99000,                 # nr for discovery
     )

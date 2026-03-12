@@ -16,6 +16,7 @@ from .const import (
     REQ_BURST_PERIOD,
     ScomAddress,
     XcomFormat,
+    XcomTarget,
     XcomCategory,
     XcomAggregationType,
     ScomFrameFlag,
@@ -58,8 +59,8 @@ from .values import (
     XcomValues,
     XcomValuesItem,
 )
-import time
 import threading
+import time
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -200,13 +201,13 @@ class XcomApiBase:
             XcomApiResponseIsError
         """
 
+        # Sanity check
+        if parameter.target != XcomTarget.STANDARD:
+            raise XcomParamException(f"Invalid datapoint passed to request_value; must have target STANDARD. Violated by datapoint '{parameter.name}' ({parameter.nr})")
+            
         # Check/convert input parameters        
         if type(dstAddr) is str:
             dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
-
-        # Check for virtual value request
-        if parameter.category in [XcomCategory.VIRTUAL]:
-            return self.request_virtual(parameter, dstAddr=dstAddr, retries=retries, timeout=timeout, verbose=verbose)
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
@@ -239,9 +240,12 @@ class XcomApiBase:
             XcomApiTimeoutException
             XcomApiResponseIsError
         """
-
+        # Sanity check
         if not self.connected:
             return None
+
+        if parameter.target != XcomTarget.VIRTUAL:
+            raise XcomParamException(f"Invalid datapoint passed to request_value; must have target VIRTUAL. Violated by datapoint '{parameter.name}' ({parameter.nr})")
     
         # Virtual request
         match parameter.nr:
@@ -258,6 +262,9 @@ class XcomApiBase:
                         case 99020: return msg.message_string
                         case 99021: return datetime.fromtimestamp(msg.timestamp)
                         case 99022: return msg.source_address
+
+            case _:
+                raise XcomParamException(f"Invalid datapoint passed to request_virtual; nr not recognized. Violated by datapoint '{parameter.name}' ({parameter.nr})")
 
         return None
             
@@ -280,6 +287,9 @@ class XcomApiBase:
 
         # Sanity check
         for item in request_data.items:
+            if item.datapoint.target != XcomTarget.STANDARD:
+                raise XcomParamException(f"Invalid datapoint passed to request_infos; must have target STANDARD. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
+            
             if item.datapoint.category != XcomCategory.INFO:
                 raise XcomParamException(f"Invalid datapoint passed to request_infos; must have type INFO. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
             
@@ -309,12 +319,12 @@ class XcomApiBase:
 
     def request_values(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
         """
-        Request multiple infos and params in one call.
+        Request multiple infos, params or virtuals in one call.
         Can only retrieve actual device values, NOT the average or sum over multiple devices.
 
         The function will try to be as efficient as possible and combine retrieval of multiple infos in one call.
         When the xcom-client does not support multiple-infos in one call, they are retried one by one. 
-        Requested params are always retrieved one by one, so the function can take a while to finish.        
+        Requested params and virtuals are always retrieved one by one, so the function can take a while to finish.        
 
         Returns None if not connected, otherwise returns the list of requested values
         Throws
@@ -325,6 +335,7 @@ class XcomApiBase:
         """
 
         # Sort out which XcomValues can be done via multi request_values and which must be done via single request_value
+        req_virtuals: list[XcomValuesItem] = []
         req_singles: list[XcomValuesItem] = []
         req_multi_items: list[XcomValuesItem] = []
         req_multis: list[XcomValues] = []
@@ -332,26 +343,37 @@ class XcomApiBase:
 
         for idx,item in enumerate(request_data.items):
             
-            match item.datapoint.category:
-                case XcomCategory.INFO:
-                    if item.aggregation_type is not None and item.aggregation_type in range(XcomAggregationType.DEVICE1, XcomAggregationType.DEVICE15+1):
-                        # Can be combined with other infos in a request_values call
-                        req_multi_items.append(item)
-
-                    elif item.address is not None:
-                        # Any others need to be done via an individual request_value cal
-                        req_singles.append(item)
-
-                    else:
-                        raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
-
-                case XcomCategory.PARAMETER:
+            match item.datapoint.target:
+                case XcomTarget.VIRTUAL:
                     if item.address is not None:
-                        # Needs to be done via an individual request_value call
-                        req_singles.append(item)
+                        # Needs to be done via an individual request_virtual call
+                        req_virtuals.append(item)
 
                     else:
                         raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
+
+                case XcomTarget.STANDARD:
+                    # Standard datapoints are handled depending on category and aggregation type
+                    match item.datapoint.category:
+                        case XcomCategory.INFO:
+                            if item.aggregation_type is not None and item.aggregation_type in range(XcomAggregationType.DEVICE1, XcomAggregationType.DEVICE15+1):
+                                # Can be combined with other infos in a request_values call
+                                req_multi_items.append(item)
+
+                            elif item.address is not None:
+                                # Any others need to be done via an individual request_value cal
+                                req_singles.append(item)
+
+                            else:
+                                raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
+
+                        case XcomCategory.PARAMETER:
+                            if item.address is not None:
+                                # Needs to be done via an individual request_value call
+                                req_singles.append(item)
+
+                            else:
+                                raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
             
             if (len(req_multi_items) == MULTI_INFO_REQ_MAX) or \
                (len(req_multi_items) > 0 and idx == idx_last):
@@ -414,6 +436,36 @@ class XcomApiBase:
                 error = error,
             )
             result_items.append(rsp_single)
+
+            # Periodically wait for a second. This will make sure we do not block Xcom-LAN with
+            # too many requests at once and prevent it from uploading data to the Studer portal.
+            if (datetime.now() - burst_start).total_seconds() > REQ_BURST_PERIOD:
+                time.sleep(1)
+                burst_start = datetime.now()
+
+        # Finally perform all the virtual request_value requests
+        for req_virtual in req_virtuals:
+            try:
+                error = None
+                value = self.request_virtual(req_virtual.datapoint, req_virtual.address, retries=retries, timeout=timeout, verbose=verbose)
+            
+            except Exception as ex:
+                value = None
+                error = str(ex)
+
+            if error is not None:
+                _LOGGER.debug(f"Failed to retrieve virtual info or param {req_virtual.datapoint.nr}:{req_virtual.address}; {error}")
+
+            # Add to results
+            rsp_virtual = XcomValuesItem(
+                datapoint = req_virtual.datapoint, 
+                code = req_virtual.code,
+                address = req_virtual.address,
+                aggregation_type=req_virtual.aggregation_type, 
+                value = value,
+                error = error,
+            )
+            result_items.append(rsp_virtual)
 
             # Periodically wait for a second. This will make sure we do not block Xcom-LAN with
             # too many requests at once and prevent it from uploading data to the Studer portal.

@@ -37,6 +37,9 @@ REQ_TIMEOUT = 3
 REQ_RETRIES = 3
 REQ_BURST_PERIOD = 5 # do burst of requests for 5 seconds, then wait a second, then the next burst
 
+NR_VIRTUAL_START = 98000
+NR_VIRTUAL_END = 99999
+
 
 class XcomApiTcpMode(StrEnum):
     SERVER = "server"
@@ -187,9 +190,13 @@ class XcomMultiInfoFlags(IntEnum):
     VT_PRESENT  = 0x00000080,
     VS_PRESENT  = 0x00000100,
 
+### values for target
+class XcomTarget(StrEnum):
+    STANDARD    = "standard"
+    VIRTUAL     = "virtual"
+
 ### values for category
 class XcomCategory:
-    VIRTUAL    = 0x0000
     INFO       = 0x0001
     PARAMETER  = 0x0002
 
@@ -208,7 +215,6 @@ class ScomObjType:
     def __repr__(self):
         return self.name
 
-    @staticmethod
     @staticmethod
     def from_str(s: str, default: int|None = None):
         for e in XcomAggregationType:

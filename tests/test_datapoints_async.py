@@ -6,6 +6,7 @@ from pystuderxcom import (
     XcomVoltage, 
     XcomFormat, 
     XcomCategory, 
+    XcomTarget,
     XcomDatapointUnknownException,
     AsyncXcomFactory,
     XcomFactory,
@@ -39,6 +40,7 @@ async def test_nr():
     assert param.nr == 1107
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.PARAMETER
+    assert param.target == XcomTarget.STANDARD
 
     param = dataset.get_by_nr(1552)
     assert param.family_id == "xt"
@@ -48,18 +50,21 @@ async def test_nr():
     assert param.options != None
     assert type(param.options) is dict
     assert len(param.options) == 3
+    assert param.target == XcomTarget.STANDARD
 
     param = dataset.get_by_nr(3000)
     assert param.family_id == "xt"
     assert param.nr == 3000
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.INFO
+    assert param.target == XcomTarget.STANDARD
 
     param = dataset.get_by_nr(3000, "xt")
     assert param.family_id == "xt"
     assert param.nr == 3000
     assert param.format == XcomFormat.FLOAT
     assert param.category == XcomCategory.INFO
+    assert param.target == XcomTarget.STANDARD
 
     param = dataset.get_by_nr(5012, "rcc")
     assert param.family_id == "rcc"
@@ -68,12 +73,14 @@ async def test_nr():
     assert param.category == XcomCategory.PARAMETER
     assert param.options != None
     assert type(param.options) is dict
+    assert param.target == XcomTarget.STANDARD
 
     param = dataset.get_by_nr(99000)
     assert param.family_id == "xcom"
     assert param.nr == 99000
     assert param.format == XcomFormat.BOOL
-    assert param.category == XcomCategory.VIRTUAL
+    assert param.category == XcomCategory.INFO
+    assert param.target == XcomTarget.VIRTUAL
 
     with pytest.raises(XcomDatapointUnknownException):
         param = dataset.get_by_nr(9999)

@@ -9,9 +9,15 @@ import logging
 from dataclasses import dataclass
 
 from .const import (
+    NR_VIRTUAL_END,
+    NR_VIRTUAL_START,
     XcomLevel,
     XcomFormat,
     XcomCategory,
+    XcomTarget,
+)
+from .families import (
+    XcomDeviceFamilies,
 )
 
 
@@ -82,9 +88,6 @@ class XcomDatapoint:
         
     @property
     def category(self) -> XcomCategory:
-        if self.nr >= 99000:
-            return XcomCategory.VIRTUAL
-        
         if self.level in [XcomLevel.INFO]:
             return XcomCategory.INFO
 
@@ -93,6 +96,13 @@ class XcomDatapoint:
             
         _LOGGER.debug(f"Unknown category for datapoint {self.nr} with level {self.level} and format {self.format}")
         return XcomCategory.INFO
+    
+    @property
+    def target(self) -> XcomTarget:
+        if NR_VIRTUAL_START <= self.nr <= NR_VIRTUAL_END:
+            return XcomTarget.VIRTUAL
+        else:
+            return XcomTarget.STANDARD
     
     def enum_value(self, key):
         if self.format not in [XcomFormat.LONG_ENUM, XcomFormat.SHORT_ENUM]:

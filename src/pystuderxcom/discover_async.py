@@ -17,6 +17,7 @@ from .api_base_sync import (
 )
 from .const import (
     XcomDiscoverNotConnected,
+    XcomTarget,
 )
 from .data import (
     XcomDiscoveredDevice,
@@ -86,7 +87,10 @@ class AsyncXcomDiscover:
                     param = self._dataset.get_by_nr(nr, family.id_for_nr)
 
                     _LOGGER.info(f"Trying device {device_code} on {device_addr} for nr {nr}")
-                    value = await self._api.request_value(param, device_addr, verbose=verbose)
+                    match param.target:
+                        case XcomTarget.STANDARD: value = await self._api.request_value(param, device_addr, verbose=verbose)
+                        case XcomTarget.VIRTUAL : value = await self._api.request_virtual(param, device_addr, verbose=verbose)
+                        
                     if value is not None:
                         _LOGGER.info(f"  Found device {device_code} via {nr}:{device_addr}")
 
