@@ -13,7 +13,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  'httpx',9021
+  'httpx',
   'asyncudp',
   'pyserial',
   'pyserial-asyncio',
