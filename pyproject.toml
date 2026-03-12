@@ -1,6 +1,6 @@
 [project]
 name = "pystuderxcom"
-version = "3.4.3"
+version = "3.4.4"
 authors = [
   { name="Anko Hanse", email="anko_hanse@hotmail.com" },
 ]
@@ -13,7 +13,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  'httpx',
+  'httpx',9021
   'asyncudp',
   'pyserial',
   'pyserial-asyncio',

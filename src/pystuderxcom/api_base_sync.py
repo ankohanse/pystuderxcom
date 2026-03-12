@@ -260,7 +260,7 @@ class XcomApiBase:
                 if msg:
                     match parameter.nr:
                         case 99020: return msg.message_string
-                        case 99021: return datetime.fromtimestamp(msg.timestamp)
+                        case 99021: return msg.timestamp
                         case 99022: return msg.source_address
 
             case _:
