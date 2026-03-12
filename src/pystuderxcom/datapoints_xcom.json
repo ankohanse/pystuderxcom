@@ -1,0 +1,41 @@
+[
+    {  "_rem": "Extra 'virtual' Xcom datapoints"},
+
+    {  "_rem": "Column descriptions:"},
+    {  "_rem": "  fam  = Device Family"},
+    {  "_rem": "  lvl  = User level required to access the param or info"},
+    {  "_rem": "  pnr  = Parent number in menu structure"},
+    {  "_rem": "  nr   = Number of the param or info"},
+    {  "_rem": "  name = Friendly name of the param or info"},
+    {  "_rem": "  urcc = Data unit of measurement as displayed on RCC"},
+    {  "_rem": "  unit = Data unit of measurement"},
+    {  "_rem": "  def  = Default value"},
+    {  "_rem": "  min  = Minimum value"},
+    {  "_rem": "  max  = Maximum value"},
+    {  "_rem": "  fmt  = Data format"},
+    {  "_rem": "  inc  = Increment step"},
+    {  "_rem": "  opt  = Options for selection in Enums"},
+    {  "_rem": "  rem  = Remarks"},
+    
+
+    {  "_rem": "###"},
+    {  "_rem": "### Root Menu"},
+    {  "_rem": "###"},
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 0,       "nr": 990,     "name": "Xcom infos",   "fmt": "ONLY LEVEL",   "inc": "Menu" },
+
+    {  "_rem": "###"},
+    {  "_rem": "### Xcom specific params."},
+    {  "_rem": "###"},
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99000,   "name": "Is message pending",             "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99001,   "name": "Was RCC reseted",                "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99002,   "name": "Is sd-card present",             "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99003,   "name": "Is sd-card full",                "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99004,   "name": "Is new datalogger file present", "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99020,   "name": "Latest message",                 "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99021,   "name": "Latest message time",            "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99022,   "name": "Latest message source",          "short": "",   "urcc": "",   "unit": "",   "fmt": "BOOL" },
+  
+    { "_rem": "###"},
+    { "_rem": "### End of file"},
+    { "_rem": "###"}    
+]

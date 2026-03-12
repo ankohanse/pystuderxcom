@@ -189,6 +189,7 @@ class XcomMultiInfoFlags(IntEnum):
 
 ### values for category
 class XcomCategory:
+    VIRTUAL    = 0x0000
     INFO       = 0x0001
     PARAMETER  = 0x0002
 

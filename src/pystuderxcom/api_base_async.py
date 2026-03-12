@@ -200,6 +200,10 @@ class AsyncXcomApiBase:
         if type(dstAddr) is str:
             dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
 
+        # Check for virtual value request
+        if parameter.category in [XcomCategory.VIRTUAL]:
+            return await self.request_virtual(parameter, dstAddr=dstAddr, retries=retries, timeout=timeout, verbose=verbose)
+
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomServiceId.READ,
@@ -220,6 +224,39 @@ class AsyncXcomApiBase:
                 msg = f"Failed to unpack response package for {parameter.nr}:{dstAddr}, data={response.frame_data.service_data.property_data.hex()}: {e}"
                 raise XcomApiUnpackException(msg) from None
 
+
+    async def request_virtual(self, parameter: XcomDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
+        """
+        Request a virtual param or info.
+        Returns None if not connected, otherwise returns the requested value
+        Throws
+            XcomApiWriteException
+            XcomApiReadException
+            XcomApiTimeoutException
+            XcomApiResponseIsError
+        """
+
+        if not self.connected:
+            return None
+    
+        # Virtual request
+        match parameter.nr:
+            case 99000:   return self.is_message_pending
+            case 99001:   return self.was_rcc_reseted
+            case 99002:   return self.is_sd_card_present
+            case 99003:   return self.is_sd_card_full
+            case 99004:   return self.is_new_datalogger_file_present
+
+            case 99020 | 99021 | 99022:
+                msg = await self.request_message(index=0, retries=retries, timeout=timeout, verbose=verbose)
+                if msg:
+                    match parameter.nr:
+                        case 99020: return msg.message_string
+                        case 99021: return datetime.fromtimestamp(msg.timestamp)
+                        case 99022: return msg.source_address
+
+        return None
+            
                                          
     async def request_infos(self, request_data: XcomValues, retries = None, timeout = None, verbose=False) -> XcomValues:
         """

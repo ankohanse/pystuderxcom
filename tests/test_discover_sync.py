@@ -72,18 +72,18 @@ def context():
 @pytest.mark.parametrize(
     "name, rsp_dest, rsp_dict, exp_devices",
     [
-        ("none",        [],             { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  []),
-        ("xt1",         [101],          { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["XT1"]),
-        ("xt1,xt2,xt3", [101,102,103],  { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["XT1", "XT2", "XT3"]),
-        ("l1",          [191],          { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["L1"]),
-        ("l1,l2,l3",    [191,192,193],  { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["L1", "L2", "L3"]),
-        ("rcc",         [501],          { "5002": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["RCC"]),
-        ("bsp",         [601],          { "7034": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["BSP"]),
-        ("bms",         [601],          { "7054": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["BMS"]),
-        ("vt1",         [301],          { "11000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VT1"]),
-        ("vt1,vt2",     [301,302],      { "11000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VT1", "VT2"]),
-        ("vs1",         [701],          { "15000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VS1"]),
-        ("vs1,vs2",     [701,702],      { "15000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VS1", "VS2"]),
+        ("none",        [990],              { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["XCOM"]),
+        ("xt1",         [101,990],          { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["XT1", "XCOM"]),
+        ("xt1,xt2,xt3", [101,102,103,990],  { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["XT1", "XT2", "XT3", "XCOM"]),
+        ("l1",          [191,990],          { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["L1", "XCOM"]),
+        ("l1,l2,l3",    [191,192,193,990],  { "3000": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["L1", "L2", "L3", "XCOM"]),
+        ("rcc",         [501,990],          { "5002": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["RCC", "XCOM"]),
+        ("bsp",         [601,990],          { "7034": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["BSP", "XCOM"]),
+        ("bms",         [601,990],          { "7054": XcomData.pack(1234.0, XcomFormat.FLOAT) },  ["BMS", "XCOM"]),
+        ("vt1",         [301,990],          { "11000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VT1", "XCOM"]),
+        ("vt1,vt2",     [301,302,990],      { "11000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VT1", "VT2", "XCOM"]),
+        ("vs1",         [701,990],          { "15000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VS1", "XCOM"]),
+        ("vs1,vs2",     [701,702,990],      { "15000": XcomData.pack(1234.0, XcomFormat.FLOAT) }, ["VS1", "VS2", "XCOM"]),
     ]
 )
 def test_discover_devices(name, rsp_dest, rsp_dict, exp_devices, request):
@@ -173,7 +173,7 @@ def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_model, ex
     devices = context.discover.discover_devices(getExtendedInfo=True)
 
     # Check discovered devices
-    assert len(devices) == 1
+    assert len(devices) == 2    # The target device plus the virtual Xcom device
     device = devices[0]
 
     assert device.code in exp_code

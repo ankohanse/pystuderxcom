@@ -56,15 +56,19 @@ class XcomFactory:
             text_120vac = file_120vac.read()
         with open(XcomDataset.PATH_240V, "r", encoding="UTF-8") as file_240vac:
             text_240vac = file_240vac.read()
+        with open(XcomDataset.PATH_XCOM, "r", encoding="UTF-8") as file_xcom:
+            text_xcom = file_xcom.read()
         
         values_120vac = orjson.loads(text_120vac)
         values_240vac = orjson.loads(text_240vac)
+        values_xcom   = orjson.loads(text_xcom)
 
         datapoints_120vac = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_120vac]))
         datapoints_240vac = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_240vac]))
+        datapoints_xcom   = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_xcom]))
 
-        # start with the 240v list as base
-        datapoints = datapoints_240vac
+        # start with the merged 240v + xcom lists as base
+        datapoints = datapoints_240vac + datapoints_xcom
 
         match voltageAC:
             case XcomVoltage.AC240:

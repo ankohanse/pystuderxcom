@@ -82,6 +82,9 @@ class XcomDatapoint:
         
     @property
     def category(self) -> XcomCategory:
+        if self.nr >= 99000:
+            return XcomCategory.VIRTUAL
+        
         if self.level in [XcomLevel.INFO]:
             return XcomCategory.INFO
 
@@ -117,6 +120,7 @@ class XcomDataset:
 
     PATH_120V = __file__.replace('.py', '_120v.json')
     PATH_240V = __file__.replace('.py', '_240v.json')
+    PATH_XCOM = __file__.replace('.py', '_xcom.json')
 
     def __init__(self, datapoints: list[XcomDatapoint] | None = None):
         self._datapoints = datapoints

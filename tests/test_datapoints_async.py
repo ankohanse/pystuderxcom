@@ -16,12 +16,12 @@ from pystuderxcom import (
 @pytest.mark.parametrize(
     "voltageAC, voltageDC, exp_len",
     [
-        (XcomVoltage.AC120, XcomVoltage.DC12, 1451),
-        (XcomVoltage.AC120, XcomVoltage.DC24, 1451),
-        (XcomVoltage.AC120, XcomVoltage.DC48, 1451),
-        (XcomVoltage.AC240, XcomVoltage.DC12, 1451),
-        (XcomVoltage.AC240, XcomVoltage.DC24, 1451),
-        (XcomVoltage.AC240, XcomVoltage.DC48, 1451),
+        (XcomVoltage.AC120, XcomVoltage.DC12, 1460),
+        (XcomVoltage.AC120, XcomVoltage.DC24, 1460),
+        (XcomVoltage.AC120, XcomVoltage.DC48, 1460),
+        (XcomVoltage.AC240, XcomVoltage.DC12, 1460),
+        (XcomVoltage.AC240, XcomVoltage.DC24, 1460),
+        (XcomVoltage.AC240, XcomVoltage.DC48, 1460),
     ]
 )
 async def test_create(voltageAC, voltageDC, exp_len):
@@ -68,6 +68,12 @@ async def test_nr():
     assert param.category == XcomCategory.PARAMETER
     assert param.options != None
     assert type(param.options) is dict
+
+    param = dataset.get_by_nr(99000)
+    assert param.family_id == "xcom"
+    assert param.nr == 99000
+    assert param.format == XcomFormat.BOOL
+    assert param.category == XcomCategory.VIRTUAL
 
     with pytest.raises(XcomDatapointUnknownException):
         param = dataset.get_by_nr(9999)
@@ -126,7 +132,7 @@ async def test_menu():
     dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     
     root_items = dataset.get_menu_items(0)
-    assert len(root_items) == 12
+    assert len(root_items) == 13
 
     for item in root_items:
         sub_items = dataset.get_menu_items(item.nr)

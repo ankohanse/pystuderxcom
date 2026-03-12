@@ -21,6 +21,7 @@ def main():
     info_3022 = dataset.get_by_nr(3022, "xt")
     info_3023 = dataset.get_by_nr(3023, "xt")
     info_7002 = dataset.get_by_nr(7002, "bsp")
+    info_99003 = dataset.get_by_nr(99003, "xcom")
     param_5012 = dataset.get_by_nr(5012, "rcc")
     param_1107 = dataset.get_by_nr(1107, "xt")
 
@@ -54,6 +55,10 @@ def main():
         # Retrieve param #5012 from RCC (User Level)
         value = api.request_value(param_5012, "RCC")    # rcc address range is only 501, or use "RCC"
         logger.info(f"RCC {param_5012.nr}: {param_5012.enum_value(value)} {param_5012.unit or ''} ({param_5012.name})")
+
+        # Retrieve virtual info #99003 from XCOM (Is sd-card full)
+        value = api.request_value(info_99003, "XCOM")    # xcom does not have an address range, always use "XCOM"
+        logger.info(f"XCOM {info_99003.nr}: {value} {info_99003.unit or ''} ({info_99003.name})")
 
         # Retrieve multiple values (any combination of infos or params) in one call.
         logger.info(f"")

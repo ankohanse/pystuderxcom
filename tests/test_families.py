@@ -7,7 +7,7 @@ from pystuderxcom import XcomAggregationType
 
 def test_list():
     families = XcomDeviceFamilies.get_list()
-    assert len(families) == 9
+    assert len(families) == 10
 
 
 def test_id():
@@ -35,6 +35,7 @@ def test_id():
         ("vt",  "VT15",315, XcomAggregationType.DEVICE15),
         ("vs",  "VS1", 701, XcomAggregationType.DEVICE1),
         ("vs",  "VS15",715, XcomAggregationType.DEVICE15),
+        ("xcom","XCOM",990, XcomAggregationType.DEVICE1),
     ]
 )
 def test_code(family_id, code, addr, aggr):
@@ -69,6 +70,7 @@ def test_code(family_id, code, addr, aggr):
         ("vt",  315, "VT15","VT15",XcomAggregationType.DEVICE15),
         ("vs",  701, "VS1", "VS1", XcomAggregationType.DEVICE1),
         ("vs",  715, "VS15","VS15",XcomAggregationType.DEVICE15),
+        ("xcom",990, "XCOM","XCOM",XcomAggregationType.DEVICE1),
     ]
 )
 def test_addr(family_id, addr, fam_code, code, aggr):
@@ -128,6 +130,10 @@ def test_addr(family_id, addr, fam_code, code, aggr):
         ("vs",  XcomAggregationType.MASTER,   None,  None),
         ("vs",  XcomAggregationType.AVERAGE,  None,  None),
         ("vs",  XcomAggregationType.SUM,      None,  None),
+        ("xcom",XcomAggregationType.DEVICE1,  "XCOM",990),
+        ("xcom",XcomAggregationType.MASTER,   None,  None),
+        ("xcom",XcomAggregationType.AVERAGE,  None,  None),
+        ("xcom",XcomAggregationType.SUM,      None,  None),
     ]
 )
 def test_aggr(family_id, aggr, code, addr):

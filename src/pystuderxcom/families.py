@@ -137,6 +137,15 @@ class XcomDeviceFamilies:
         15000, 15999,          # nr for infos,  start to end
         15000,                 # nr for discovery
     )
+    XCOM = XcomDeviceFamily(    
+        "xcom", "xcom",        # virtual device to expose additional values in a uniform way
+        "Xcom", 
+        990,                   # addr multicast to all devices (write only)
+        990, 990,              # addr devices,  start to end
+        0, 0,                  # nr for params, start to end
+        99000, 99999,          # nr for infos,  start to end 
+        99000,                 # nr for discovery
+    )
 
 
     @staticmethod

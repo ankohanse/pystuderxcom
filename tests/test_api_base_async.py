@@ -52,6 +52,60 @@ async def test_flags(name, do_req, rsp_frm_flags, exp_imp, exp_wrr, exp_iscp, ex
     assert api.is_new_datalogger_file_present == exp_indlfp
 
 
+@pytest_asyncio.fixture
+async def data_message():
+    rsp_data = XcomDataMessageRsp(10, 1, 101, datetime.now().timestamp(), 1234)
+    yield rsp_data
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("data_message")
+@pytest.mark.parametrize(
+    "name, test_nr, test_dest, rsp_frm_flags, rsp_data, exp_value, exp_except",
+    [
+        ("request virtual false",               99000, 990, 0x00,                                     None, False, None),
+        ("request virtual is_message_pending",  99000, 990, ScomFrameFlag.IS_MESSAGE_PENDING,         None, True,  None),
+        ("request virtual was_rcc_reseted",     99001, 990, ScomFrameFlag.WAS_RCC_RESETED,            None, True,  None),
+        ("request virtual is_sd_card_present",  99002, 990, ScomFrameFlag.IS_SD_CARD_PRESENT,         None, True,  None),
+        ("request virtual is_sd_card_full",     99003, 990, ScomFrameFlag.IS_SD_CARD_FULL,            None, True,  None),
+        ("request virtual is_log_file_present", 99004, 990, ScomFrameFlag.IS_DATALOGGER_FILE_PRESENT, None, True,  None),
+        ("request virtual latest_msg_text",     99020, 990, 0x00,                                     "data_message","Warning (001): Battery too high",  None),
+        ("request virtual latest_msg_source",   99022, 990, 0x00,                                     "data_message", 101,   None),
+    ]
+)
+async def test_request_virtual(name, test_nr, test_dest, rsp_frm_flags, rsp_data,exp_value, exp_except, request):
+
+    if isinstance(rsp_data, str):
+        rsp_data = request.getfixturevalue(rsp_data)
+        rsp_data = rsp_data.pack()
+
+    dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+    param = dataset.get_by_nr(test_nr)
+
+    async def on_receive(api: AsyncTestApi):
+        """Helper to turn a request into a response"""
+        api.response_package = copy.deepcopy(api.request_package)
+
+        api.response_package.header.frame_flags = rsp_frm_flags
+        api.response_package.frame_data.service_flags = 0x02
+        api.response_package.frame_data.service_data.property_data = rsp_data if api.request_package.frame_data.service_data.object_type != ScomObjType.GUID else XcomData.pack("00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID)
+        api.response_package.header.data_length = len(api.response_package.frame_data)
+
+    # Run the request
+    api = AsyncTestApi(on_receive_handler=on_receive)
+
+    # Virtual values need to have any other call done first
+    await api.request_guid(retries=1, timeout=5)
+
+    if exp_except == None:
+        value = await api.request_virtual(param, test_dest, retries=1, timeout=5)
+
+        assert value == exp_value
+    else:
+        with pytest.raises(exp_except):
+            value = await api.request_virtual(param, test_dest, retries=1, timeout=5)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except",
@@ -453,12 +507,6 @@ async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_
     else:
         with pytest.raises(exp_except):
             rsp_data = await api.request_values(req_data, retries=1, timeout=5)
-
-
-@pytest_asyncio.fixture
-async def data_message():
-    rsp_data = XcomDataMessageRsp(10, 1, 101, datetime.now().timestamp(), 1234)
-    yield rsp_data
 
 
 @pytest.mark.asyncio
