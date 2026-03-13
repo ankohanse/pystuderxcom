@@ -37,6 +37,7 @@
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99020,   "name": "Latest message",                 "short": "",   "urcc": "",   "unit": "",     "fmt": "STRING" },
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99021,   "name": "Latest message time",            "short": "",   "urcc": "",   "unit": "Seconds",   "fmt": "INT32" },
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99022,   "name": "Latest message source",          "short": "",   "urcc": "",   "unit": "addr", "fmt": "INT32" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99023,   "name": "Message count",                  "short": "",   "urcc": "",   "unit": "",     "fmt": "INT32" },
   
     { "_rem": "###"},
     { "_rem": "### End of file"},

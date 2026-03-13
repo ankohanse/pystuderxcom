@@ -91,7 +91,9 @@ def main():
             XcomValuesItem(dataset.get_by_nr(7031, "bsp"), code="BSP"),
             XcomValuesItem(dataset.get_by_nr(7032, "bsp"), code="BSP"),
             XcomValuesItem(dataset.get_by_nr(7033, "bsp"), code="BSP"),
+            XcomValuesItem(dataset.get_by_nr(99020, "xcom"), code="XCOM"),
             XcomValuesItem(dataset.get_by_nr(99021, "xcom"), code="XCOM"),
+            XcomValuesItem(dataset.get_by_nr(99022, "xcom"), code="XCOM"),
         ])
         rsp = api.request_values(req)
         if rsp:

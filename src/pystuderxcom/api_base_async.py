@@ -251,13 +251,14 @@ class AsyncXcomApiBase:
             case 99003:   return self.is_sd_card_full
             case 99004:   return self.is_new_datalogger_file_present
 
-            case 99020 | 99021 | 99022:
+            case 99020 | 99021 | 99022 | 99023:
                 msg = await self.request_message(index=0, retries=retries, timeout=timeout, verbose=verbose)
                 if msg:
                     match parameter.nr:
                         case 99020: return msg.message_string
                         case 99021: return msg.timestamp
                         case 99022: return msg.source_address
+                        case 99023: return msg.message_total
 
             case _:
                 raise XcomParamException(f"Invalid datapoint passed to request_virtual; nr not recognized. Violated by datapoint '{parameter.name}' ({parameter.nr})")
