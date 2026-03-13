@@ -57,7 +57,7 @@ def main():
         logger.info(f"RCC {param_5012.nr}: {param_5012.enum_value(value)} {param_5012.unit or ''} ({param_5012.name})")
 
         # Retrieve virtual info #99003 from XCOM (Is sd-card full)
-        value = api.request_value(info_99003, "XCOM")    # xcom does not have an address range, always use "XCOM"
+        value = api.request_virtual(info_99003, "XCOM")    # xcom address range is only 990, or use "XCOM"
         logger.info(f"XCOM {info_99003.nr}: {value} {info_99003.unit or ''} ({info_99003.name})")
 
         # Retrieve multiple values (any combination of infos or params) in one call.
@@ -91,6 +91,7 @@ def main():
             XcomValuesItem(dataset.get_by_nr(7031, "bsp"), code="BSP"),
             XcomValuesItem(dataset.get_by_nr(7032, "bsp"), code="BSP"),
             XcomValuesItem(dataset.get_by_nr(7033, "bsp"), code="BSP"),
+            XcomValuesItem(dataset.get_by_nr(99021, "xcom"), code="XCOM"),
         ])
         rsp = api.request_values(req)
         if rsp:

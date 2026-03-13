@@ -35,7 +35,7 @@
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99003,   "name": "Is sd-card full",                "short": "",   "urcc": "",   "unit": "",     "fmt": "BOOL" },
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99004,   "name": "Is new datalogger file present", "short": "",   "urcc": "",   "unit": "",     "fmt": "BOOL" },
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99020,   "name": "Latest message",                 "short": "",   "urcc": "",   "unit": "",     "fmt": "STRING" },
-    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99021,   "name": "Latest message time",            "short": "",   "urcc": "",   "unit": "ts",   "fmt": "INT32" },
+    {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99021,   "name": "Latest message time",            "short": "",   "urcc": "",   "unit": "Seconds",   "fmt": "INT32" },
     {   "fam": "xcom",  "lvl": "Info",    "pnr": 990,     "nr": 99022,   "name": "Latest message source",          "short": "",   "urcc": "",   "unit": "addr", "fmt": "INT32" },
   
     { "_rem": "###"},
