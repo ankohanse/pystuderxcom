@@ -853,7 +853,7 @@
     {   "fam": "bms",   "lvl": "Info",    "pnr": 75,     "nr": 7069,   "name": "State of Charge for backup",   "short": "SocBu",   "urcc": "%",   "unit": "",   "fmt": "FLOAT" },
     {   "fam": "bms",   "lvl": "Info",    "pnr": 75,     "nr": 7070,   "name": "State of Charge for grid-feeding",   "short": "SocGf",   "urcc": "%",   "unit": "",   "fmt": "FLOAT" },
     {   "fam": "bms",   "lvl": "Info",    "pnr": 75,     "nr": 7071,   "name": "State of Charge for end of charge",   "short": "SocEoc",   "urcc": "%",   "unit": "",   "fmt": "FLOAT" },
-    {   "fam": "bms",   "lvl": "Info",    "pnr": 75,     "nr": 7022,   "name": "Minigrid State of Charge",   "short": "mgSoc",   "urcc": "%",   "unit": "",   "fmt": "FLOAT" },
+    {   "fam": "bms",   "lvl": "Info",    "pnr": 75,     "nr": 7072,   "name": "Minigrid State of Charge",   "short": "mgSoc",   "urcc": "%",   "unit": "",   "fmt": "FLOAT" },
 
     { "_rem": "###"},
     { "_rem": "### VarioTrack params"},
