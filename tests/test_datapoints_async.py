@@ -17,12 +17,12 @@ from pystuderxcom import (
 @pytest.mark.parametrize(
     "voltageAC, voltageDC, exp_len",
     [
-        (XcomVoltage.AC120, XcomVoltage.DC12, 1460),
-        (XcomVoltage.AC120, XcomVoltage.DC24, 1460),
-        (XcomVoltage.AC120, XcomVoltage.DC48, 1460),
-        (XcomVoltage.AC240, XcomVoltage.DC12, 1460),
-        (XcomVoltage.AC240, XcomVoltage.DC24, 1460),
-        (XcomVoltage.AC240, XcomVoltage.DC48, 1460),
+        (XcomVoltage.AC120, XcomVoltage.DC12, 1461),
+        (XcomVoltage.AC120, XcomVoltage.DC24, 1461),
+        (XcomVoltage.AC120, XcomVoltage.DC48, 1461),
+        (XcomVoltage.AC240, XcomVoltage.DC12, 1461),
+        (XcomVoltage.AC240, XcomVoltage.DC24, 1461),
+        (XcomVoltage.AC240, XcomVoltage.DC48, 1461),
     ]
 )
 async def test_create(voltageAC, voltageDC, exp_len):
