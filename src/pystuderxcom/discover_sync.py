@@ -117,25 +117,31 @@ class XcomDiscover:
 
     def get_extended_device_info(self, device: XcomDiscoveredDevice, verbose=False) -> XcomDiscoveredDevice:
         # ID type
-        # ID HW
-        # ID HW PWR
+        # ID HW (cmd)/PWR
         # ID SOFT msb/lsb
-        # ID SID
         # ID FID msb/lsb
         try:
             _LOGGER.info(f"Trying to get extended device info for device {device.code})")
             family = XcomDeviceFamilies.get_by_id(device.family_id)
 
-            id_type    = self._request_value_by_name("ID type",     family.id, device.addr, verbose=verbose)
-            id_hw      = self._request_value_by_name("ID HW",       family.id, device.addr, verbose=verbose)
-            id_hw_pwr  = self._request_value_by_name("ID HW PWR",   family.id, device.addr, verbose=verbose)
-            id_sw_msb  = self._request_value_by_name("ID SOFT msb", family.id, device.addr, verbose=verbose)
-            id_sw_lsb  = self._request_value_by_name("ID SOFT lsb", family.id, device.addr, verbose=verbose)
-            id_fid_msb = self._request_value_by_name("ID FID msb",  family.id, device.addr, verbose=verbose)
-            id_fid_lsb = self._request_value_by_name("ID FID lsb",  family.id, device.addr, verbose=verbose)
+            param_id_type    = self._dataset.get_by_nr(family.nr_id_type, family.id) if family.nr_id_type is not None else None
+            param_id_hw_cmd  = self._dataset.get_by_nr(family.nr_id_hw_cmd, family.id) if family.nr_id_hw_cmd is not None else None
+            param_id_hw_pwr  = self._dataset.get_by_nr(family.nr_id_hw_pwr, family.id) if family.nr_id_hw_pwr is not None else None
+            param_id_sw_msb  = self._dataset.get_by_nr(family.nr_id_sw_msb, family.id) if family.nr_id_sw_msb is not None else None
+            param_id_sw_lsb  = self._dataset.get_by_nr(family.nr_id_sw_lsb, family.id) if family.nr_id_sw_lsb is not None else None
+            param_id_fid_msb = self._dataset.get_by_nr(family.nr_id_fid_msb, family.id) if family.nr_id_fid_msb is not None else None
+            param_id_fid_lsb = self._dataset.get_by_nr(family.nr_id_fid_lsb, family.id) if family.nr_id_fid_lsb is not None else None
 
-            device.device_model = self._decode_type(id_type, "ID type", family.id_for_nr)
-            device.hw_version   = self._decode_id_hw(id_hw, id_hw_pwr)
+            id_type    = self._api.request_value(param_id_type,    device.addr, verbose=verbose) if param_id_type is not None else None
+            id_hw_cmd  = self._api.request_value(param_id_hw_cmd,  device.addr, verbose=verbose) if param_id_hw_cmd is not None else None
+            id_hw_pwr  = self._api.request_value(param_id_hw_pwr,  device.addr, verbose=verbose) if param_id_hw_pwr is not None else None
+            id_sw_msb  = self._api.request_value(param_id_sw_msb,  device.addr, verbose=verbose) if param_id_sw_msb is not None else None
+            id_sw_lsb  = self._api.request_value(param_id_sw_lsb,  device.addr, verbose=verbose) if param_id_sw_lsb is not None else None
+            id_fid_msb = self._api.request_value(param_id_fid_msb, device.addr, verbose=verbose) if param_id_fid_msb is not None else None
+            id_fid_lsb = self._api.request_value(param_id_fid_lsb, device.addr, verbose=verbose) if param_id_fid_lsb is not None else None
+
+            device.device_model = self._decode_type(id_type, param_id_type)
+            device.hw_version   = self._decode_id_hw(id_hw_cmd, id_hw_pwr)
             device.sw_version   = self._decode_id_sw(id_sw_msb, id_sw_lsb)
             device.fid          = self._decode_fid(id_fid_msb, id_fid_lsb)
 
@@ -147,20 +153,10 @@ class XcomDiscover:
         return device
 
 
-    def _request_value_by_name(self, param_name, family_id, device_addr, verbose=False):
-        try:
-            param = self._dataset.get_by_name(param_name, family_id)
-            return self._api.request_value(param, device_addr, verbose=verbose)
-        except:
-            # Not all devices have these IDs
-            return None
-        
-
-    def _decode_type(self, val, param_name, family_id):
-        if val is None:
+    def _decode_type(self, val, param):
+        if val is None or param is None:
             return None
 
-        param = self._dataset.get_by_name(param_name, family_id)
         return param.options.get(str(int(val)), None) if param.options else None
 
 

@@ -39,6 +39,13 @@ class XcomDeviceFamily:
     nr_infos_start: int
     nr_infos_end: int
     nr_discover: int
+    nr_id_type: int | None
+    nr_id_hw_cmd: int | None
+    nr_id_hw_pwr: int | None
+    nr_id_sw_msb: int | None
+    nr_id_sw_lsb: int | None
+    nr_id_fid_msb: int | None
+    nr_id_fid_lsb: int | None
 
     def get_code(self, addr):
         if addr == self.addr_multicast:
@@ -64,6 +71,10 @@ class XcomDeviceFamilies:
         1000, 1999,            # nr for params, start to end
         3000, 3999,            # nr for infos,  start to end 
         3000,                  # nr for discovery
+        3124,                  # nr for model/type    
+        3129, 3132,            # nr for hardware version (cmd, pwr)
+        3130, 3131,            # nr for software version (msb, lsb)
+        3156, 3157,            # nr for fid (msb, lsb)
     )
     L1 = XcomDeviceFamily(
         "l1", "xt",
@@ -73,6 +84,10 @@ class XcomDeviceFamilies:
         1000, 1999,            # nr for params, start to end
         3000, 3999,            # nr for infos,  start to end   
         3000,                  # nr for discovery
+        None,                  # nr for model/type    
+        None, None,            # nr for hardware version (cmd, pwr)
+        None, None,            # nr for software version (msb, lsb)
+        None, None,            # nr for fid (msb, lsb)
     )
     L2 = XcomDeviceFamily(
         "l2", "xt",
@@ -82,6 +97,10 @@ class XcomDeviceFamilies:
         1000, 1999,            # nr for params, start to end
         3000, 3999,            # nr for infos,  start to end   
         3000,                  # nr for discovery
+        None,                  # nr for model/type    
+        None, None,            # nr for hardware version (cmd, pwr)
+        None, None,            # nr for software version (msb, lsb)
+        None, None,            # nr for fid (msb, lsb)
     )
     L3 = XcomDeviceFamily(
         "l3", "xt",
@@ -91,6 +110,10 @@ class XcomDeviceFamilies:
         1000, 1999,            # nr for params, start to end
         3000, 3999,            # nr for infos,  start to end   
         3000,                  # nr for discovery
+        None,                  # nr for model/type    
+        None, None,            # nr for hardware version (cmd, pwr)
+        None, None,            # nr for software version (msb, lsb)
+        None, None,            # nr for fid (msb, lsb)
     )
     RCC = XcomDeviceFamily(
         "rcc", "rcc",
@@ -100,6 +123,10 @@ class XcomDeviceFamilies:
         5000, 5999,            # nr for params, start to end
         0, 0,                  # nr for infos,  start to end
         5002,                  # nr for discovery
+        None,                  # nr for model/type    
+        None, None,            # nr for hardware version (cmd, pwr)
+        None, None,            # nr for software version (msb, lsb)
+        None, None,            # nr for fid (msb, lsb)
     )
     BMS = XcomDeviceFamily(
         "bms", "bms",
@@ -109,6 +136,10 @@ class XcomDeviceFamilies:
         6000, 6999,            # nr for params, start to end
         7000, 7999,            # nr for infos,  start to end
         7054,                  # nr for discovery
+        7034,                  # nr for model/type    
+        7036, None,            # nr for hardware version (cmd, pwr)
+        7037, 7038,            # nr for software version (msb, lsb)
+        7048, 7049,            # nr for fid (msb, lsb)
     )
     BSP = XcomDeviceFamily(    # Place AFTER BMS; during Discovery BSP is only tested if no BMS is found
         "bsp", "bsp",
@@ -118,6 +149,10 @@ class XcomDeviceFamilies:
         6000, 6999,            # nr for params, start to end
         7000, 7999,            # nr for infos,  start to end
         7034,                  # nr for discovery
+        7034,                  # nr for model/type    
+        7036, None,            # nr for hardware version (cmd, pwr)
+        7037, 7038,            # nr for software version (msb, lsb)
+        7048, 7049,            # nr for fid (msb, lsb)
     )
     VARIOTRACK = XcomDeviceFamily(
         "vt", "vt",
@@ -127,6 +162,10 @@ class XcomDeviceFamilies:
         10000, 10999,          # nr for params, start to end
         11000, 11999,          # nr for infos,  start to end
         11000,                 # nr for discovery
+        11047,                 # nr for model/type    
+        11049, None,           # nr for hardware version (cmd, pwr)
+        11050, 11051,          # nr for software version (msb, lsb)
+        11067, 11068,          # nr for fid (msb, lsb)
     )
     VARIOSTRING = XcomDeviceFamily(
         "vs", "vs",
@@ -136,6 +175,10 @@ class XcomDeviceFamilies:
         14000, 14999,          # nr for params, start to end
         15000, 15999,          # nr for infos,  start to end
         15000,                 # nr for discovery
+        15074,                 # nr for model/type    
+        15076, None,           # nr for hardware version (cmd, pwr)
+        15077, 15078,          # nr for software version (msb, lsb)
+        15102, 15103,          # nr for fid (msb, lsb)
     )
     XCOM = XcomDeviceFamily(    
         "xcom", "xcom",        # virtual device to expose additional values in a uniform way
@@ -145,6 +188,10 @@ class XcomDeviceFamilies:
         98000, 98999,          # nr for params, start to end
         99000, 99999,          # nr for infos,  start to end 
         99000,                 # nr for discovery
+        None,                  # nr for model/type    
+        None, None,            # nr for hardware version (cmd, pwr)
+        None, None,            # nr for software version (msb, lsb)
+        None, None,            # nr for fid (msb, lsb)
     )
 
 
