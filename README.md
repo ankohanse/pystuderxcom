@@ -1,4 +1,4 @@
-[![license](https://img.shields.io/github/license/toreamun/amshan-homeassistant?style=for-the-badge)](LICENSE)
+[![license](https://img.shields.io/github/license/ankohanse/pystuderxcom?style=for-the-badge)](LICENSE)
 [![buy_me_a_coffee](https://img.shields.io/badge/If%20you%20like%20it-Buy%20me%20a%20coffee-yellow.svg?style=for-the-badge)](https://www.buymeacoffee.com/ankohanse)
 
 
@@ -22,7 +22,7 @@ It should also be able to detect and handle
 
 Disclaimer: this library is NOT created by Studer-Innotec, but is based on their documentation of the Xcom protocol.
 That documentation can be found on:
-[Studer-Innotec Download Center](https://www.studer-innotec.com/en/downloads/) *-> Software and Updates -> Communication protocol Xcom-232i*
+[Studer-Innotec Download Center](https://www.studer-innotec.com/en/downloads/) *-> Openstuder -> Communication protocol Xcom-232i*
 
 
 # Prerequisites
