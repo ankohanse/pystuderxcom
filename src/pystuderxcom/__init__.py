@@ -7,7 +7,7 @@ from .discover_async import AsyncXcomDiscover
 from .factory_async import AsyncXcomFactory
 
 from .api_base_sync import XcomApiBase
-from .discover_sync import XcomDiscover
+from .discover_sync import XcomDiscover, XcomDiscoverFlags
 from .factory_sync import XcomFactory
 
 from .const import XcomApiTcpMode, XcomVoltage, XcomLevel, XcomFormat, XcomTarget, XcomCategory, XcomAggregationType

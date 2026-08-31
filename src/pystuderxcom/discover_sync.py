@@ -10,6 +10,7 @@ import os
 import struct
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 from .api_base_async import (
     AsyncXcomApiBase,
@@ -40,6 +41,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
+class XcomDiscoverFlags(StrEnum):
+    SKIP_GUID = "skip_guid"
+
+    
 class XcomDiscover:
 
     def __init__(self, api: XcomApiBase, dataset: XcomDataset):
@@ -188,7 +193,7 @@ class XcomDiscover:
         return bytes.hex(' ',4).upper()
 
 
-    def discover_client_info(self, verbose=False) -> XcomDiscoveredClient:
+    def discover_client_info(self, flags:dict={}, verbose=False) -> XcomDiscoveredClient:
         """
         Discover extended info about the remote Xcom client connected to us
         """
@@ -199,6 +204,8 @@ class XcomDiscover:
 
         if not self._api.remote_ip:
             raise XcomDiscoverNotConnected("No IP address was detected for the remote client")
+
+        flags = flags or {}
 
         _LOGGER.info(f"Trying to get client info")
         client_ip = None
@@ -213,9 +220,12 @@ class XcomDiscover:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")
 
         try:
-            client_guid = self._api.request_guid(verbose=verbose)
+            if flags.get(XcomDiscoverFlags.SKIP_GUID, False):
+                _LOGGER.info(f"  Skip guid discover")
+            else:
+                client_guid = self._api.request_guid(verbose=verbose)
 
-            _LOGGER.info(f"  Found guid: {client_guid}")
+                _LOGGER.info(f"  Found guid: {client_guid}")
 
         except Exception as e:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")

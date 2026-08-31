@@ -4,7 +4,7 @@ import threading
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import AsyncXcomDiscover, XcomDiscover
+from pystuderxcom import AsyncXcomDiscover, XcomDiscover, XcomDiscoverFlags
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
@@ -184,23 +184,29 @@ async def test_discover_extendedinfo(name, rsp_dest, rsp_dict, exp_code, exp_mod
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("context", "unused_tcp_port")
 @pytest.mark.parametrize(
-    "name, rsp_dest, rsp_dict, exp_ip, exp_guid",
+    "name, flag_skip_guid, rsp_dest, rsp_dict, exp_ip, exp_guid",
     [
-        ("guid none",   [501], {
+        ("guid none",   False, [501], {
                             "5002": XcomData.pack("137aef81-08b7-4e70-ad89-0dad0563d627", XcomFormat.GUID),    
                     }, "127.0.0.1", None),
-        ("guid ok",     [501], {
+        ("guid ok",     False, [501], {
                             "0": XcomData.pack("137aef81-08b7-4e70-ad89-0dad0563d627", XcomFormat.GUID),    
                     }, "127.0.0.1", "137aef81-08b7-4e70-ad89-0dad0563d627"),
+        ("guid skip",   True,  [501], {
+                            "0": XcomData.pack("137aef81-08b7-4e70-ad89-0dad0563d627", XcomFormat.GUID),    
+                    }, "127.0.0.1", None),
     ]        
 )
-async def test_clientinfo(name, rsp_dest, rsp_dict, exp_ip, exp_guid, request):
+async def test_clientinfo(name, flag_skip_guid, rsp_dest, rsp_dict, exp_ip, exp_guid, request):
     # Create discover instance
     context = request.getfixturevalue("context")
     await context.start_discover(rsp_dest, rsp_dict)
 
     # Perform the discover
-    client_info = await context.discover.discover_client_info()
+    flags = {
+        XcomDiscoverFlags.SKIP_GUID: flag_skip_guid,
+    }
+    client_info = await context.discover.discover_client_info(flags)
 
     # Check discovered info
     assert client_info is not None
