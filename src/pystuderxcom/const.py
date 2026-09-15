@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from typing import Iterable
 
+from .shared.types import (
+    StuderUserLevel
+)
+
 
 class XcomApiWriteException(Exception):
     """Exception to indicate failure while writing data to the xcom client"""
@@ -68,80 +72,26 @@ class XcomVoltage(StrEnum):
                     msg = f"Unknown voltage: '{s}'"
                     raise Exception(msg)
 
-### data types
-class XcomLevel(IntEnum):
-    INFO   = 0x0001
-    VO     = 0x0000 # View Only. Used for param RCC 5012 (User Level)
-    BASIC  = 0x0010
-    EXPERT = 0x0020
-    INST   = 0x0030 # Installer
-    QSP    = 0x0040 # Qualified Service Person
+
+class XcomUserLevel():
+    """Helper to read User-Level from the dataset and messages structures"""
 
     @staticmethod
-    def from_str(s: str, default: int|None = None):
+    def from_str(s:str, default:StuderUserLevel=None) -> StuderUserLevel:
         match s.upper():
-            case 'INFO': return XcomLevel.INFO
-            case 'VO' | 'V.O.': return XcomLevel.VO
-            case 'BASIC': return XcomLevel.BASIC
-            case 'EXPERT': return XcomLevel.EXPERT
-            case 'INST' | 'INST.': return XcomLevel.INST
-            case 'QSP': return XcomLevel.QSP
+            case 'INFO': return StuderUserLevel.INFO
+            case 'VO' | 'V.O.': return StuderUserLevel.VIEWONLY
+            case 'BASIC': return StuderUserLevel.BASIC
+            case 'EXPERT': return StuderUserLevel.EXPERT
+            case 'INST' | 'INST.': return StuderUserLevel.INSTALLER
+            case 'QSP': return StuderUserLevel.STUDER
             case _: 
                 if default is not None:
                     return default
                 else:
-                    msg = f"Unknown level: '{s}'"
+                    msg = f"Unknown user-level: '{s}'"
                     raise Exception(msg)
 
-    def __str__(self):
-        return self.name
-    
-    def __repr__(self):
-        return self.name
-
-class XcomFormat(StrEnum):
-    BOOL       = "BOOL"         # 1 byte
-    FORMAT     = "FORMAT"       # 2 bytes
-    SHORT_ENUM = "SHORT ENUM"   # 2 bytes
-    ERROR      = "ERROR"        # 2 bytes
-    INT32      = "INT32"        # 4 bytes
-    FLOAT      = "FLOAT"        # 4 bytes
-    LONG_ENUM  = "LONG_ENUM"    # 4 bytes
-    GUID       = "GUID"         # 16 bytes
-    STRING     = "STRING"       # n bytes
-    DYNAMIC    = "DYNAMIC"      # n bytes
-    BYTES      = "BYTES"        # n bytes
-    MENU       = "MENU"         # n.a.
-    INVALID    = "INVALID"      # n.a.
-
-    @staticmethod
-    def from_str(s: str, default: str|None = None):
-        match s.upper():
-            case 'BOOL': return XcomFormat.BOOL
-            case 'FORMAT': return XcomFormat.FORMAT
-            case 'SHORT_ENUM' | 'SHORT ENUM': return XcomFormat.SHORT_ENUM
-            case 'ERROR': return XcomFormat.ERROR
-            case 'INT32': return XcomFormat.INT32
-            case 'FLOAT': return XcomFormat.FLOAT
-            case 'LONG_ENUM' | 'LONG ENUM': return XcomFormat.LONG_ENUM
-            case 'GUID': return XcomFormat.GUID
-            case 'STRING': return XcomFormat.STRING
-            case 'DYNAMIC': return XcomFormat.DYNAMIC
-            case 'BYTES': return XcomFormat.BYTES
-            case 'MENU' | 'ONLY_LEVEL' | 'ONLY LEVEL': return XcomFormat.MENU
-            case 'NOT SUPPORTED': return XcomFormat.INVALID
-            case _: 
-                if default is not None:
-                    return default
-                else:
-                    msg = f"Unknown format: '{s}'"
-                    raise Exception(msg)
-
-    def __str__(self):
-        return self.name
-    
-    def __repr__(self):
-        return self.name
 
 ### values for aggregation_type
 class XcomAggregationType(IntEnum):

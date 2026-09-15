@@ -7,7 +7,7 @@ import pytest_asyncio
 from pystuderxcom import AsyncXcomFactory
 from pystuderxcom import XcomFactory
 from pystuderxcom import XcomPackage, XcomDataset, XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
-from pystuderxcom import XcomFormat, XcomVoltage, XcomAggregationType, ScomServiceId, ScomObjType, ScomQspId, ScomAddress
+from pystuderxcom import XcomAggregationType, ScomServiceId, ScomObjType, ScomQspId, ScomAddress
 
 
 @pytest.fixture

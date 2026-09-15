@@ -2,9 +2,11 @@ import asyncio
 import logging
 import sys
 
+from pystuderxcom import StuderDataType
 from pystuderxcom import AsyncXcomFactory
 from pystuderxcom import XcomFactory
-from pystuderxcom import XcomVoltage, XcomFormat
+from pystuderxcom import XcomVoltage
+from pystuderxcom import XcomDeviceFamilies
 from helper import RunHelper
 
 # Setup logging to StdOut
@@ -17,15 +19,21 @@ async def main():
     dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltage.DC24 
 
     # Helper function to recursively print the entire menu
-    async def print_menu(parent, indent=""):
-        items = dataset.get_menu_items(parent)
+    async def print_menu(family_id, parent_id, indent="    "):
+        items = dataset.get_menu_items(family_id, parent_id)
         for item in items:
-            logger.info(f"{indent}{item.nr}: {item.name}")
+            if item.data_type == StuderDataType.MENU:
+                logger.info(f"{indent}{item.label}")
 
-            if item.format == XcomFormat.MENU:
-                await print_menu(item.nr, indent+"  ")
+                await print_menu(family_id, str(item.id), indent+"  ")
+            else:
+                logger.info(f"{indent}{item.label} ({item.address})")
 
-    await print_menu(0)
+    for family in XcomDeviceFamilies.get_list():
+        logger.info(f"")
+        logger.info(f"{family.model}")
+        await print_menu(family.id, "", "  ")
+
     dataset = None  # Release memory of the dataset
 
 

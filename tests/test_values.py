@@ -2,7 +2,7 @@ import math
 import pytest
 import pytest_asyncio
 from pystuderxcom import XcomValues, XcomValuesItem
-from pystuderxcom import XcomFormat, XcomVoltage, XcomAggregationType
+from pystuderxcom import XcomVoltage, XcomAggregationType
 from pystuderxcom import XcomDataset, XcomDatapoint
 from pystuderxcom import AsyncXcomFactory
 

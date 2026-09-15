@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from pystuderxcom import XcomLevel
+from pystuderxcom import StuderUserLevel
 from pystuderxcom import XcomMessage, XcomMessageDef, XcomMessageSet, XcomMessageUnknownException
 from pystuderxcom import AsyncXcomFactory
 from pystuderxcom import XcomFactory
@@ -18,12 +18,12 @@ async def test_nr():
     msg_set = await AsyncXcomFactory.create_messageset()
 
     msg_def = msg_set.get_by_nr(0)
-    assert msg_def.level == XcomLevel.VO
+    assert msg_def.level == StuderUserLevel.VIEWONLY
     assert msg_def.number == 0
     assert msg_def.string is not None
 
     msg_def = msg_set.get_by_nr(235)
-    assert msg_def.level == XcomLevel.VO
+    assert msg_def.level == StuderUserLevel.VIEWONLY
     assert msg_def.number == 235
     assert msg_def.string is not None
 

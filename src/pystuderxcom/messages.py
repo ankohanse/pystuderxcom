@@ -11,12 +11,17 @@ import logging
 
 from dataclasses import dataclass
 
+
+from .shared.types import (
+    StuderUserLevel,
+)
 from .const import (
-    XcomLevel,
+    XcomUserLevel
 )
 from .data import (
     XcomDataMessageRsp,
 )
+
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 class XcomMessageDef:
     PATH_EN = __file__.replace('.py', '_en.json')
 
-    level: XcomLevel
+    level: StuderUserLevel
     number: int
     string: str
 
@@ -43,7 +48,7 @@ class XcomMessageDef:
         if type(nr) is not int:
             return None
         
-        level = XcomLevel.from_str(str(lvl))
+        level = XcomUserLevel.from_str(str(lvl))
         number = int(nr)
         string = str(msg).strip()
             

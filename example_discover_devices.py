@@ -27,11 +27,11 @@ def main():
         
         helper = XcomDiscover(api, dataset)
 
-        # Discover Xcom client info
-        client_info = helper.discover_client_info()
+        # Discover Xcom gatway info
+        gw_info = helper.discover_gateway_info()
 
         logger.info(f"\n\n")
-        logger.info(f"Discovered {client_info}")
+        logger.info(f"Discovered {gw_info}")
 
         # Discover Xcom devices
         devices = helper.discover_devices(getExtendedInfo=True, verbose=False)

@@ -5,7 +5,8 @@ import sys
 from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValues, XcomValuesItem
-from pystuderxcom import XcomVoltage, XcomAggregationType, XcomFormat
+from pystuderxcom import XcomVoltage, XcomAggregationType
+from pystuderxcom import StuderDataType
 from helper import RunHelper
 
 # Setup logging to StdOut
@@ -96,7 +97,7 @@ async def main():
         rsp = await api.request_values(req)
         if rsp:
             for item in rsp.items:
-                item_value = item.value if item.datapoint.format not in [XcomFormat.LONG_ENUM, XcomFormat.SHORT_ENUM] else item.datapoint.enum_value(item.value)
+                item_value = item.value if item.datapoint.data_type not in [StuderDataType.ENUM16, StuderDataType.ENUM32] else item.datapoint.enum_value(item.value)
 
                 logger.info(f"Values {item.code} {item.datapoint.nr}: {item_value} {item.datapoint.unit or ''} ({item.datapoint.name})")
 
@@ -116,7 +117,7 @@ async def main():
                 logger.info(f"Infos datetime: {rsp.datetime}")
                 for item in rsp.items:
                     item_code = item.code if item.code is not None else str(item.aggregation_type)
-                    item_value = item.value if item.datapoint.format not in [XcomFormat.LONG_ENUM, XcomFormat.SHORT_ENUM] else item.datapoint.enum_value(item.value)
+                    item_value = item.value if item.datapoint.data_type not in [StuderDataType.ENUM16, StuderDataType.ENUM32] else item.datapoint.enum_value(item.value)
 
                     logger.info(f"Infos {item_code} {item.datapoint.nr}: {item.value} {item.datapoint.unit or ''} ({item.datapoint.name})")
 

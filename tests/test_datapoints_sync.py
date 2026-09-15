@@ -4,12 +4,14 @@ import pytest
 import pytest_asyncio
 
 from pystuderxcom import (
-    XcomDataset, 
+    StuderDatapointUnknownException,
+    StuderDataset, 
+    StuderDatapoint,
+    StuderDataType,
+    StuderUserLevel,
+    StuderAccess,
+    StuderTarget,
     XcomVoltage, 
-    XcomFormat, 
-    XcomCategory, 
-    XcomTarget,
-    XcomDatapointUnknownException,
     AsyncXcomFactory,
     XcomFactory,
 )
@@ -40,54 +42,54 @@ def test_nr():
     param = dataset.get_by_nr(1107)
     assert param.family_id == "xt"
     assert param.nr == 1107
-    assert param.format == XcomFormat.FLOAT
-    assert param.category == XcomCategory.PARAMETER
-    assert param.target == XcomTarget.STANDARD
+    assert param.data_type == StuderDataType.FLOAT32
+    assert param.access == StuderAccess.READ_WRITE
+    assert param.target == StuderTarget.STANDARD
 
     param = dataset.get_by_nr(1552)
     assert param.family_id == "xt"
     assert param.nr == 1552
-    assert param.format == XcomFormat.LONG_ENUM
-    assert param.category == XcomCategory.PARAMETER
-    assert param.options != None
-    assert type(param.options) is dict
-    assert len(param.options) == 3
-    assert param.target == XcomTarget.STANDARD
+    assert param.data_type == StuderDataType.ENUM32
+    assert param.access == StuderAccess.READ_WRITE
+    assert param.enum_options != None
+    assert type(param.enum_options) is dict
+    assert len(param.enum_options) == 3
+    assert param.target == StuderTarget.STANDARD
 
     param = dataset.get_by_nr(3000)
     assert param.family_id == "xt"
     assert param.nr == 3000
-    assert param.format == XcomFormat.FLOAT
-    assert param.category == XcomCategory.INFO
-    assert param.target == XcomTarget.STANDARD
+    assert param.data_type == StuderDataType.FLOAT32
+    assert param.access == StuderAccess.READ
+    assert param.target == StuderTarget.STANDARD
 
     param = dataset.get_by_nr(3000, "xt")
     assert param.family_id == "xt"
     assert param.nr == 3000
-    assert param.format == XcomFormat.FLOAT
-    assert param.category == XcomCategory.INFO
-    assert param.target == XcomTarget.STANDARD
+    assert param.data_type == StuderDataType.FLOAT32
+    assert param.access == StuderAccess.READ
+    assert param.target == StuderTarget.STANDARD
 
     param = dataset.get_by_nr(5012, "rcc")
     assert param.family_id == "rcc"
     assert param.nr == 5012
-    assert param.format == XcomFormat.LONG_ENUM
-    assert param.category == XcomCategory.PARAMETER
-    assert param.options != None
-    assert type(param.options) is dict
-    assert param.target == XcomTarget.STANDARD
+    assert param.data_type == StuderDataType.ENUM32
+    assert param.access == StuderAccess.READ_WRITE
+    assert param.enum_options != None
+    assert type(param.enum_options) is dict
+    assert param.target == StuderTarget.STANDARD
 
     param = dataset.get_by_nr(99000)
     assert param.family_id == "xcom"
     assert param.nr == 99000
-    assert param.format == XcomFormat.BOOL
-    assert param.category == XcomCategory.INFO
-    assert param.target == XcomTarget.VIRTUAL
+    assert param.data_type == StuderDataType.BOOL
+    assert param.access == StuderAccess.READ
+    assert param.target == StuderTarget.VIRTUAL
 
-    with pytest.raises(XcomDatapointUnknownException):
+    with pytest.raises(StuderDatapointUnknownException):
         param = dataset.get_by_nr(9999)
 
-    with pytest.raises(XcomDatapointUnknownException):
+    with pytest.raises(StuderDatapointUnknownException):
         param = dataset.get_by_nr(3000, "bsp")
 
 
@@ -121,9 +123,9 @@ def test_enum():
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
 
     param = dataset.get_by_nr(1552)
-    assert param.options != None
-    assert type(param.options) is dict
-    assert len(param.options) == 3
+    assert param.enum_options != None
+    assert type(param.enum_options) is dict
+    assert len(param.enum_options) == 3
 
     assert param.enum_value(1) == "Slow"
     assert param.enum_value("1") == "Slow"
@@ -137,13 +139,28 @@ def test_enum():
 
 
 @pytest.mark.asyncio
-def test_menu():
+@pytest.mark.parametrize(
+    "family_id, exp_root_len",
+    [
+        ("xt",  2),
+        ("l1",  0),
+        ("l2",  0),
+        ("l3",  0),
+        ("rcc", 2),
+        ("bsp", 2),
+        ("bms", 2),
+        ("vt",  2),
+        ("vs",  2),
+        ("xcom", 1),
+    ]
+)
+def test_menu(family_id, exp_root_len):
     dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
     
-    root_items = dataset.get_menu_items(0)
-    assert len(root_items) == 13
+    root_items = dataset.get_menu_items(family_id)
+    assert len(root_items) == exp_root_len
 
     for item in root_items:
-        sub_items = dataset.get_menu_items(item.nr)
+        sub_items = dataset.get_menu_items(family_id, item.id)
         assert len(sub_items) > 0
 

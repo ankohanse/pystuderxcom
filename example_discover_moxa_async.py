@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def main():
     # Discover IP address of Xcom-LAN / Moxa
     # Can be usefull to open the Moxa NPort Web Config
-    url = await AsyncXcomDiscover.discover_moxa_webconfig()
+    url = await AsyncXcomDiscover.discover_gateway_webconfig()
     if url:
         logger.info(f"Moxa NPort Web Config found at: {url}")
     else:

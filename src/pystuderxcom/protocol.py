@@ -16,8 +16,10 @@ import struct
 
 from io import BufferedWriter, BufferedReader, BytesIO
 
+from .shared.types import (
+    StuderDataType,
+)
 from .const import (
-    XcomFormat,
     ScomAddress,
     ScomErrorCode,
     ScomServiceFlag,
@@ -223,7 +225,7 @@ class XcomPackage():
 
     def get_error(self) -> str:
         if self.is_error():
-            error = XcomData.unpack(self.frame_data.service_data.property_data, XcomFormat.ERROR)
+            error = XcomData.unpack(self.frame_data.service_data.property_data, StuderDataType.ERROR)
             return ScomErrorCode.get_by_error(error)
         return None
  

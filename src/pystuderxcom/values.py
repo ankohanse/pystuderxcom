@@ -111,7 +111,7 @@ class XcomValues():
         for item in rsp.items:
             datapoint = next((i.datapoint for i in req.items if i.datapoint.nr==item.user_info_ref), None)
             aggregation_type = item.aggregation_type
-            value = XcomData.cast(item.data, datapoint.format) if datapoint is not None else None
+            value = XcomData.cast(item.data, datapoint.data_type) if datapoint is not None else None
 
             items.append(XcomValuesItem(
                 datapoint = datapoint,

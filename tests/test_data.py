@@ -3,7 +3,8 @@ import math
 import pytest
 import pytest_asyncio
 from pystuderxcom import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
-from pystuderxcom import XcomFormat, XcomAggregationType
+from pystuderxcom import XcomAggregationType
+from pystuderxcom import StuderDataType
 
 
 @pytest_asyncio.fixture
@@ -17,13 +18,13 @@ async def data_multi_info():
 @pytest.mark.parametrize(
     "name, value, format, expected_length",
     [
-        ("bool",       True, XcomFormat.BOOL, 1),
-        ("short enum", 1234, XcomFormat.SHORT_ENUM, 2),
-        ("int32",      1234, XcomFormat.INT32, 4),
-        ("long enum",  1234, XcomFormat.LONG_ENUM, 4),
-        ("float",      123.4, XcomFormat.FLOAT, 4),
-        ("guid",       "00112233-4455-6677-8899-aabbccddeeff", XcomFormat.GUID, 16),
-        ("string",     "abcde", XcomFormat.STRING, 5),
+        ("bool",       True, StuderDataType.BOOL, 1),
+        ("short enum", 1234, StuderDataType.ENUM16, 2),
+        ("int32",      1234, StuderDataType.INT32, 4),
+        ("long enum",  1234, StuderDataType.ENUM32, 4),
+        ("float",      123.4, StuderDataType.FLOAT32, 4),
+        ("guid",       "00112233-4455-6677-8899-aabbccddeeff", StuderDataType.GUID, 16),
+        ("string",     "abcde", StuderDataType.STRING, 5),
     ]
 )
 def test_data(name, value, format, expected_length):
@@ -38,7 +39,7 @@ def test_data(name, value, format, expected_length):
 
     assert type(clone) == type(value)
     match format:
-        case XcomFormat.FLOAT:
+        case StuderDataType.FLOAT32 | StuderDataType.FLOAT64:
             # carefull with comparing floats
             assert clone == pytest.approx(value, abs=0.01)
         case _:

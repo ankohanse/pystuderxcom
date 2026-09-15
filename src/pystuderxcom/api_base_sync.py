@@ -8,6 +8,15 @@ import logging
 
 from datetime import datetime, timedelta
 
+from .shared.types import (
+    StuderAccess,
+    StuderDataType,
+    StuderTarget,
+    StuderUserLevel,
+)
+from .shared.dataset import (
+    StuderDatapoint,
+)
 from .const import (
     START_TIMEOUT,
     STOP_TIMEOUT,
@@ -15,9 +24,6 @@ from .const import (
     REQ_RETRIES,
     REQ_BURST_PERIOD,
     ScomAddress,
-    XcomFormat,
-    XcomTarget,
-    XcomCategory,
     XcomAggregationType,
     ScomFrameFlag,
     ScomObjType,
@@ -36,9 +42,6 @@ from .data import (
     XcomData,
     XcomDataMessageRsp,
     MULTI_INFO_REQ_MAX,
-)
-from .datapoints import (
-    XcomDatapoint,
 )
 from .factory_async import (
     AsyncXcomFactory,
@@ -183,14 +186,14 @@ class XcomApiBase:
         if response is not None:
             # Unpack the response value
             try:
-                return XcomData.unpack(response.frame_data.service_data.property_data, XcomFormat.GUID)
+                return XcomData.unpack(response.frame_data.service_data.property_data, StuderDataType.GUID)
 
             except Exception as e:
                 msg = f"Failed to unpack response package for GUID:{request.header.dst_addr}, data={response.frame_data.service_data.property_data.hex()}: {e}"
                 raise XcomApiUnpackException(msg) from None
 
                                          
-    def request_value(self, parameter: XcomDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
+    def request_value(self, parameter: StuderDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
         """
         Request a param or info.
         Returns None if not connected, otherwise returns the requested value
@@ -202,7 +205,7 @@ class XcomApiBase:
         """
 
         # Sanity check
-        if parameter.target != XcomTarget.STANDARD:
+        if parameter.target != StuderTarget.STANDARD:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target STANDARD. Violated by datapoint '{parameter.name}' ({parameter.nr})")
             
         # Check/convert input parameters        
@@ -212,9 +215,9 @@ class XcomApiBase:
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
             service_id = ScomServiceId.READ,
-            object_type = ScomObjType.PARAMETER if parameter.category == XcomCategory.PARAMETER else ScomObjType.INFO,
+            object_type = ScomObjType.PARAMETER if parameter.access in [StuderAccess.WRITE, StuderAccess.READ_WRITE] else ScomObjType.INFO,
             object_id = parameter.nr,
-            property_id = ScomQspId.UNSAVED_VALUE if parameter.category == XcomCategory.PARAMETER else ScomQspId.VALUE,
+            property_id = ScomQspId.UNSAVED_VALUE if parameter.access in [StuderAccess.WRITE, StuderAccess.READ_WRITE] else ScomQspId.VALUE,
             property_data = XcomData.NONE,
             dst_addr = dstAddr
         )
@@ -223,14 +226,14 @@ class XcomApiBase:
         if response is not None:
             # Unpack the response value
             try:
-                return XcomData.unpack(response.frame_data.service_data.property_data, parameter.format)
+                return XcomData.unpack(response.frame_data.service_data.property_data, parameter.data_type)
 
             except Exception as e:
                 msg = f"Failed to unpack response package for {parameter.nr}:{dstAddr}, data={response.frame_data.service_data.property_data.hex()}: {e}"
                 raise XcomApiUnpackException(msg) from None
 
 
-    def request_virtual(self, parameter: XcomDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
+    def request_virtual(self, parameter: StuderDatapoint, dstAddr = 100, retries = None, timeout = None, verbose=False):
         """
         Request a virtual param or info.
         Returns None if not connected, otherwise returns the requested value
@@ -244,7 +247,7 @@ class XcomApiBase:
         if not self.connected:
             return None
 
-        if parameter.target != XcomTarget.VIRTUAL:
+        if parameter.target != StuderTarget.VIRTUAL:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target VIRTUAL. Violated by datapoint '{parameter.name}' ({parameter.nr})")
     
         # Virtual request
@@ -288,10 +291,10 @@ class XcomApiBase:
 
         # Sanity check
         for item in request_data.items:
-            if item.datapoint.target != XcomTarget.STANDARD:
+            if item.datapoint.target != StuderTarget.STANDARD:
                 raise XcomParamException(f"Invalid datapoint passed to request_infos; must have target STANDARD. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
             
-            if item.datapoint.category != XcomCategory.INFO:
+            if item.datapoint.userlevel_r != StuderUserLevel.INFO:
                 raise XcomParamException(f"Invalid datapoint passed to request_infos; must have type INFO. Violated by datapoint '{item.datapoint.name}' ({item.datapoint.nr})")
             
             if item.aggregation_type not in XcomAggregationType:
@@ -345,7 +348,7 @@ class XcomApiBase:
         for idx,item in enumerate(request_data.items):
             
             match item.datapoint.target:
-                case XcomTarget.VIRTUAL:
+                case StuderTarget.VIRTUAL:
                     if item.address is not None:
                         # Needs to be done via an individual request_virtual call
                         req_virtuals.append(item)
@@ -353,10 +356,11 @@ class XcomApiBase:
                     else:
                         raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
 
-                case XcomTarget.STANDARD:
+                case StuderTarget.STANDARD:
                     # Standard datapoints are handled depending on category and aggregation type
-                    match item.datapoint.category:
-                        case XcomCategory.INFO:
+                    match item.datapoint.access:
+                        case StuderAccess.READ:
+                            # Info
                             if item.aggregation_type is not None and item.aggregation_type in range(XcomAggregationType.DEVICE1, XcomAggregationType.DEVICE15+1):
                                 # Can be combined with other infos in a request_values call
                                 req_multi_items.append(item)
@@ -368,7 +372,8 @@ class XcomApiBase:
                             else:
                                 raise XcomParamException(f"Invalid XcomValuesItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
 
-                        case XcomCategory.PARAMETER:
+                        case StuderAccess.WRITE | StuderAccess.READ_WRITE:
+                            # Parameter
                             if item.address is not None:
                                 # Needs to be done via an individual request_value call
                                 req_singles.append(item)
@@ -478,7 +483,7 @@ class XcomApiBase:
         return XcomValues(result_items)
 
 
-    def update_value(self, parameter: XcomDatapoint, value, dstAddr = 100, retries = None, timeout = None, verbose=False):
+    def update_value(self, parameter: StuderDatapoint, value, dstAddr = 100, retries = None, timeout = None, verbose=False):
         """
         Update a param
         Returns None if not connected, otherwise returns True on success
@@ -489,14 +494,14 @@ class XcomApiBase:
             XcomApiResponseIsError
         """
         # Sanity check: the parameter/datapoint must have category == XcomDatapointType.PARAMETER
-        if parameter.category != XcomCategory.PARAMETER:
-            _LOGGER.warning(f"Ignoring attempt to update readonly infos value {parameter}")
+        if parameter.access not in [StuderAccess.WRITE, StuderAccess.READ_WRITE]:
+            _LOGGER.warning(f"Ignoring attempt to update readonly value {parameter}")
             return None
 
         if type(dstAddr) is str:
             dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
 
-        _LOGGER.debug(f"Update value {parameter} on addr {dstAddr}")
+        _LOGGER.debug(f"Update value {parameter} on address {dstAddr}")
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
@@ -504,7 +509,7 @@ class XcomApiBase:
             object_type = ScomObjType.PARAMETER,
             object_id = parameter.nr,
             property_id = ScomQspId.UNSAVED_VALUE,
-            property_data = XcomData.pack(value, parameter.format),
+            property_data = XcomData.pack(value, parameter.data_type),
             dst_addr = dstAddr
         )
 

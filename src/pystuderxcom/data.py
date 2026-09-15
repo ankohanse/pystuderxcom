@@ -18,8 +18,10 @@ import uuid
 from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
+from .shared.types import (
+    StuderDataType,
+)
 from .const import (
-    XcomFormat,
     XcomAggregationType,
     XcomParamException,
 )
@@ -29,75 +31,60 @@ _LOGGER = logging.getLogger(__name__)
 MULTI_INFO_REQ_MAX = 76
 
 
-@dataclass
-class XcomDiscoveredClient:
-    ip: str = None
-    guid: str = None
-
-
-@dataclass
-class XcomDiscoveredDevice:
-    # Base info
-    code: str
-    addr: int
-    family_id: str
-    family_model: str
-
-    # Extended info
-    device_model: str = None
-    hw_version: str = None
-    sw_version: str = None
-    fid: str = None
-
-
 class XcomData:
     NONE = b''
 
     @staticmethod
     def unpack(value: bytes, format):
         match format:
-            case XcomFormat.BOOL: return struct.unpack("<?", value)[0]          # 1 byte, little endian, bool
-            case XcomFormat.ERROR: return struct.unpack("<H", value)[0]         # 2 bytes, little endian, unsigned short/int16
-            case XcomFormat.FORMAT: return struct.unpack("<H", value)[0]        # 2 bytes, little endian, unsigned short/int16
-            case XcomFormat.SHORT_ENUM: return struct.unpack("<H", value)[0]    # 2 bytes, little endian, unsigned short/int16
-            case XcomFormat.FLOAT: return struct.unpack("<f", value)[0]         # 4 bytes, little endian, float
-            case XcomFormat.INT32: return struct.unpack("<i", value)[0]         # 4 bytes, little endian, signed long/int32
-            case XcomFormat.LONG_ENUM: return struct.unpack("<I", value)[0]     # 4 bytes, little endian, unsigned long/int32
-            case XcomFormat.GUID: return XcomData._bytes_to_guid(value)         # 16 bytes, little endian
-            case XcomFormat.STRING: return value.decode('iso-8859-15')          # n bytes, ISO_8859-15 string of 8 bit characters
+            case StuderDataType.BOOL: return struct.unpack("<?", value)[0]          # 1 byte, little endian, bool
+            case StuderDataType.ERROR: return struct.unpack("<H", value)[0]         # 2 bytes, little endian, unsigned short/int16
+            case StuderDataType.FORMAT: return struct.unpack("<H", value)[0]        # 2 bytes, little endian, unsigned short/int16
+            case StuderDataType.ENUM16: return struct.unpack("<H", value)[0]        # 2 bytes, little endian, unsigned short/int16
+            case StuderDataType.FLOAT32: return struct.unpack("<f", value)[0]       # 4 bytes, little endian, float
+            case StuderDataType.INT32: return struct.unpack("<i", value)[0]         # 4 bytes, little endian, signed long/int32
+            case StuderDataType.ENUM32: return struct.unpack("<I", value)[0]        # 4 bytes, little endian, unsigned long/int32
+            case StuderDataType.GUID: return XcomData._bytes_to_guid(value)         # 16 bytes, little endian
+            case StuderDataType.STRING: return value.decode('iso-8859-15')          # n bytes, ISO_8859-15 string of 8 bit characters
+
+            case StuderDataType.BITFIELD | StuderDataType.MENU | StuderDataType.INVALID:
+                raise TypeError(f"Unsupported data format for XcomData.unpack: '{format}'")
             case _: 
-                msg = "Unknown data format '{format}"
-                raise TypeError(msg)
+                raise TypeError(f"Unknown data format for XcomData.unpack: '{format}'")
 
     @staticmethod
     def pack(value, format) -> bytes:
         match format:
-            case XcomFormat.BOOL: return struct.pack("<?", int(value))         # 1 byte, little endian, bool
-            case XcomFormat.ERROR: return struct.pack("<H", int(value))        # 2 bytes, little endian, unsigned short/int16
-            case XcomFormat.SHORT_ENUM: return struct.pack("<H", int(value))   # 2 bytes, little endian, unsigned short/int16
-            case XcomFormat.FLOAT: return struct.pack("<f", float(value))      # 4 bytes, little endian, float
-            case XcomFormat.INT32: return struct.pack("<i", int(value))        # 4 bytes, little endian, signed long/int32
-            case XcomFormat.LONG_ENUM: return struct.pack("<I", int(value))    # 4 bytes, little endian, unsigned long/int32
-            case XcomFormat.GUID: return XcomData._guid_to_bytes(value)        # 16 bytes, little endian
-            case XcomFormat.STRING: return value.encode('iso-8859-15')         # n bytes, ISO_8859-15 string of 8 bit characters
+            case StuderDataType.BOOL: return struct.pack("<?", int(value))         # 1 byte, little endian, bool
+            case StuderDataType.ERROR: return struct.pack("<H", int(value))        # 2 bytes, little endian, unsigned short/int16
+            case StuderDataType.ENUM16: return struct.pack("<H", int(value))       # 2 bytes, little endian, unsigned short/int16
+            case StuderDataType.FLOAT32: return struct.pack("<f", float(value))    # 4 bytes, little endian, float
+            case StuderDataType.INT32: return struct.pack("<i", int(value))        # 4 bytes, little endian, signed long/int32
+            case StuderDataType.ENUM32: return struct.pack("<I", int(value))       # 4 bytes, little endian, unsigned long/int32
+            case StuderDataType.GUID: return XcomData._guid_to_bytes(value)        # 16 bytes, little endian
+            case StuderDataType.STRING: return value.encode('iso-8859-15')         # n bytes, ISO_8859-15 string of 8 bit characters
+
+            case StuderDataType.BITFIELD | StuderDataType.MENU | StuderDataType.INVALID:
+                raise TypeError(f"Unsupported data format for XcomData.pack: '{format}'")
             case _: 
-                msg = "Unknown data format '{format}"
-                raise TypeError(msg)
+                raise TypeError(f"Unknown data format for XcomData.pack: '{format}'")
 
     @staticmethod
     def cast(value: float, format):
         match format:
-            case XcomFormat.BOOL: return bool(value)
-            case XcomFormat.ERROR: return int(value)
-            case XcomFormat.FORMAT: return int(value)
-            case XcomFormat.SHORT_ENUM: return int(value)
-            case XcomFormat.FLOAT: return value
-            case XcomFormat.INT32: return int(value)
-            case XcomFormat.LONG_ENUM: return int(value)
-            case XcomFormat.STRING: return value.decode('iso-8859-15') 
+            case StuderDataType.BOOL: return bool(value)
+            case StuderDataType.ERROR: return int(value)
+            case StuderDataType.FORMAT: return int(value)
+            case StuderDataType.ENUM16: return int(value)
+            case StuderDataType.FLOAT32: return value
+            case StuderDataType.INT32: return int(value)
+            case StuderDataType.ENUM32: return int(value)
+            case StuderDataType.STRING: return value.decode('iso-8859-15') 
+
+            case StuderDataType.BITFIELD | StuderDataType.MENU | StuderDataType.INVALID:    
+                raise TypeError(f"Unsupported data format for XcomData.cast: '{format}'")
             case _: 
-                msg = f"Unknown data format '{format}"
-                raise TypeError(msg)
+                raise TypeError(f"Unknown data format for XcomData.cast: '{format}'")
 
     @staticmethod      
     def _bytes_to_guid(value: bytes) -> str:
@@ -212,7 +199,7 @@ class XcomDataMultiInfoRsp:
             items.append(XcomDataMultiInfoRspItem(
                 user_info_ref,
                 XcomAggregationType(aggr),
-                XcomData.unpack(data, XcomFormat.FLOAT)
+                XcomData.unpack(data, StuderDataType.FLOAT32)
             ))
 
         return XcomDataMultiInfoRsp(flags, datetime, items)
@@ -224,7 +211,7 @@ class XcomDataMultiInfoRsp:
         for item in self.items:
             write_uint16(f, item.user_info_ref)
             write_uint8(f, item.aggregation_type)
-            write_bytes(f, XcomData.pack(item.data, XcomFormat.FLOAT))
+            write_bytes(f, XcomData.pack(item.data, StuderDataType.FLOAT32))
 
         return f.getvalue()
     

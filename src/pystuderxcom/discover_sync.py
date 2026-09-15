@@ -12,6 +12,22 @@ import struct
 from dataclasses import dataclass
 from enum import StrEnum
 
+from .shared.types import (
+    StuderDiscoveredDevice, 
+    StuderDiscoveredGateway,
+    StuderDiscoverNotConnected,
+)
+from .shared.dataset import (
+    StuderDatapointUnknownException,
+    StuderDataset,
+)
+from .shared.interfaces_async import (
+    AsyncStuderDiscover,
+    StuderDiscoverFlags,
+)
+from .shared.interfaces_sync import (
+    StuderDiscover,
+)
 from .api_base_async import (
     AsyncXcomApiBase,
 )
@@ -19,17 +35,11 @@ from .api_base_sync import (
     XcomApiBase,
 )
 from .const import (
-    XcomDiscoverNotConnected,
     XcomTarget,
-)
-from .data import (
-    XcomDiscoveredDevice,
-    XcomDiscoveredClient,
 )
 from .datapoints import (
     XcomDatapoint,
     XcomDataset,
-    XcomDatapointUnknownException,
 )
 from .families import (
     XcomDeviceFamilies
@@ -41,13 +51,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-class XcomDiscoverFlags(StrEnum):
-    SKIP_GUID = "skip_guid"
+class XcomDiscover(StuderDiscover):
 
-    
-class XcomDiscover:
-
-    def __init__(self, api: XcomApiBase, dataset: XcomDataset):
+    def __init__(self, api: XcomApiBase, dataset: StuderDataset):
         """
         MOXA is connecting to the TCP Server we are creating here.
         Once it is connected we can send package requests.
@@ -56,15 +62,15 @@ class XcomDiscover:
         self._dataset = dataset
 
 
-    def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[XcomDiscoveredDevice]:
+    def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[StuderDiscoveredDevice]:
         """
         Discover which Studer devices can be reached via the Xcom client
         """
-        devices: list[XcomDiscoveredDevice] = []
+        devices: list[StuderDiscoveredDevice] = []
 
         # Sanity check
         if not self._api.connected:
-            raise XcomDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
+            raise StuderDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
         
         # Check presence of devices for each family
         for family in XcomDeviceFamilies.get_list():
@@ -82,7 +88,7 @@ class XcomDiscover:
                 device_code = family.get_code(device_addr)
 
                 # Have we already discovered a device for this address?
-                device_found = next((d for d in devices if d.addr == device_addr), None)
+                device_found = next((d for d in devices if d.address == device_addr), None)
                 if device_found is not None:
                     # Do not test further device addresses in this family
                     _LOGGER.info(f"  Skip device {device_code}; already found device {device_found.code}")
@@ -102,7 +108,7 @@ class XcomDiscover:
                     if value is not None:
                         _LOGGER.info(f"  Found device {device_code} via {nr}:{device_addr}")
 
-                        device = XcomDiscoveredDevice(device_code, device_addr, family.id, family.model)
+                        device = StuderDiscoveredDevice(device_code, device_addr, family.id, family.model)
                         if getExtendedInfo:
                             device = self.get_extended_device_info(device, verbose=verbose)
                         
@@ -120,7 +126,7 @@ class XcomDiscover:
         return devices
 
 
-    def get_extended_device_info(self, device: XcomDiscoveredDevice, verbose=False) -> XcomDiscoveredDevice:
+    def get_extended_device_info(self, device: StuderDiscoveredDevice, verbose=False) -> StuderDiscoveredDevice:
         # ID type
         # ID HW (cmd)/PWR
         # ID SOFT msb/lsb
@@ -137,23 +143,23 @@ class XcomDiscover:
             param_id_fid_msb = self._dataset.get_by_nr(family.nr_id_fid_msb, family.id) if family.nr_id_fid_msb is not None else None
             param_id_fid_lsb = self._dataset.get_by_nr(family.nr_id_fid_lsb, family.id) if family.nr_id_fid_lsb is not None else None
 
-            id_type    = self._api.request_value(param_id_type,    device.addr, verbose=verbose) if param_id_type is not None else None
-            id_hw_cmd  = self._api.request_value(param_id_hw_cmd,  device.addr, verbose=verbose) if param_id_hw_cmd is not None else None
-            id_hw_pwr  = self._api.request_value(param_id_hw_pwr,  device.addr, verbose=verbose) if param_id_hw_pwr is not None else None
-            id_sw_msb  = self._api.request_value(param_id_sw_msb,  device.addr, verbose=verbose) if param_id_sw_msb is not None else None
-            id_sw_lsb  = self._api.request_value(param_id_sw_lsb,  device.addr, verbose=verbose) if param_id_sw_lsb is not None else None
-            id_fid_msb = self._api.request_value(param_id_fid_msb, device.addr, verbose=verbose) if param_id_fid_msb is not None else None
-            id_fid_lsb = self._api.request_value(param_id_fid_lsb, device.addr, verbose=verbose) if param_id_fid_lsb is not None else None
+            id_type    = self._api.request_value(param_id_type,    device.address, verbose=verbose) if param_id_type is not None else None
+            id_hw_cmd  = self._api.request_value(param_id_hw_cmd,  device.address, verbose=verbose) if param_id_hw_cmd is not None else None
+            id_hw_pwr  = self._api.request_value(param_id_hw_pwr,  device.address, verbose=verbose) if param_id_hw_pwr is not None else None
+            id_sw_msb  = self._api.request_value(param_id_sw_msb,  device.address, verbose=verbose) if param_id_sw_msb is not None else None
+            id_sw_lsb  = self._api.request_value(param_id_sw_lsb,  device.address, verbose=verbose) if param_id_sw_lsb is not None else None
+            id_fid_msb = self._api.request_value(param_id_fid_msb, device.address, verbose=verbose) if param_id_fid_msb is not None else None
+            id_fid_lsb = self._api.request_value(param_id_fid_lsb, device.address, verbose=verbose) if param_id_fid_lsb is not None else None
 
             device.device_model = self._decode_type(id_type, param_id_type)
             device.hw_version   = self._decode_id_hw(id_hw_cmd, id_hw_pwr)
             device.sw_version   = self._decode_id_sw(id_sw_msb, id_sw_lsb)
-            device.fid          = self._decode_fid(id_fid_msb, id_fid_lsb)
+            device.serial       = self._decode_fid(id_fid_msb, id_fid_lsb)
 
-            _LOGGER.info(f"  Found extended device info: model: {device.device_model}, hw_version: {device.hw_version}, sw_version: {device.sw_version}, fid: {device.fid})")
+            _LOGGER.info(f"  Found extended device info: model: {device.device_model}, serial: {device.serial}, hw_version: {device.hw_version}, sw_version: {device.sw_version})")
 
         except Exception as e:
-            _LOGGER.warning(f"  Exception in getExtendedDeviceInfo: {e}")
+            _LOGGER.warning(f"  Exception in get_extended_device_info: {e}")
 
         return device
 
@@ -162,7 +168,7 @@ class XcomDiscover:
         if val is None or param is None:
             return None
 
-        return param.options.get(str(int(val)), None) if param.options else None
+        return param.enum_options.get(str(int(val)), None) if param.enum_options else None
 
 
     def _decode_id_hw(self, cmd, pwr):
@@ -193,17 +199,17 @@ class XcomDiscover:
         return bytes.hex(' ',4).upper()
 
 
-    def discover_client_info(self, flags:dict={}, verbose=False) -> XcomDiscoveredClient:
+    def discover_gateway_info(self, flags:dict={}, verbose=False) -> StuderDiscoveredGateway:
         """
         Discover extended info about the remote Xcom client connected to us
         """
 
         # Sanity checks
         if not self._api.connected:
-            raise XcomDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
+            raise StuderDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
 
         if not self._api.remote_ip:
-            raise XcomDiscoverNotConnected("No IP address was detected for the remote client")
+            raise StuderDiscoverNotConnected("No IP address was detected for the remote client")
 
         flags = flags or {}
 
@@ -220,7 +226,7 @@ class XcomDiscover:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")
 
         try:
-            if flags.get(XcomDiscoverFlags.SKIP_GUID, False):
+            if flags.get(StuderDiscoverFlags.SKIP_GUID, False):
                 _LOGGER.info(f"  Skip guid discover")
             else:
                 client_guid = self._api.request_guid(verbose=verbose)
@@ -230,14 +236,15 @@ class XcomDiscover:
         except Exception as e:
             _LOGGER.warning(f"  Exception in discoverClientInfo: {e}")
 
-        return XcomDiscoveredClient(
-            ip = client_ip,
+        return StuderDiscoveredGateway(
+            host = client_ip,
+            port = None,
             guid = client_guid,
         )
 
 
     @staticmethod
-    def discover_moxa_webconfig(hint: str = None) -> str:
+    def discover_gateway_webconfig(hint: str = None) -> str:
         """
         Discover if Moxa Web Config page can be found on the local network
         """

@@ -8,50 +8,38 @@ import logging
 
 from dataclasses import dataclass
 
+from .shared.types import (
+    StuderAccess, 
+    StuderDataType, 
+    StuderTarget, 
+    StuderUserLevel,
+)
+from .shared.dataset import (
+    StuderDataset,
+    StuderDatapoint,
+    StuderDatapointSyntaxException
+)
 from .const import (
-    NR_VIRTUAL_END,
-    NR_VIRTUAL_START,
-    XcomLevel,
-    XcomFormat,
-    XcomCategory,
-    XcomTarget,
+    XcomUserLevel,
 )
-from .families import (
-    XcomDeviceFamilies,
-)
-
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class XcomDatapointUnknownException(Exception):
-    pass
-
-
 @dataclass
-class XcomDatapoint:
-    family_id: str
-    level: XcomLevel
-    parent: int | None
-    nr: int
-    name: str
-    abbr: str   # abbreviated/coded name
-    unit: str
-    format: XcomFormat
-    default: float|str = None
-    min: float|str = None
-    max: float|str = None
-    inc: float|str = None
-    options: dict = None
+class XcomDatapoint(StuderDatapoint):
+
+    NR_VIRTUAL_START = 98000
+    NR_VIRTUAL_END = 99999
 
     @staticmethod
-    def from_dict(d):
+    def from_dict(d) -> StuderDatapoint:
         fam = d.get('fam', None)
         lvl = d.get('lvl', None)
         pnr = d.get('pnr', None)
         nr  = d.get('nr', None)
         name = d.get('name', None)
-        short = d.get('short', None)
+        short = d.get('short', None) # Not used
         unit = d.get('unit', None)
         fmt = d.get('fmt', None)
         dft = d.get('def', None)
@@ -61,102 +49,103 @@ class XcomDatapoint:
         opt = d.get('opt', None)
 
         # Check and convert properties
-        if not fam or not lvl or not nr or not name or not fmt:
-            return None
+        if "_rem" in d and len(d)==1:
+            return None # Line only contains a comment
         
-        if type(pnr) is not int:
-            return None
-
-        if type(nr) is not int:
-            return None
+        if not fam or not lvl or not nr or not name or not fmt:
+            raise StuderDatapointSyntaxException(f"Missing required field in dataset; fam={fam}, lvl={lvl}, nr={nr}, name={name}, fmt={fmt}")
+        
+        if not isinstance(nr, int) or not isinstance(pnr, int):
+            raise StuderDatapointSyntaxException(f"Unexpected field type in dataset, expected int; fam={fam}, nr={nr}, pnr={pnr}")
         
         family_id = str(fam)
-        level = XcomLevel.from_str(str(lvl))
-        parent = int(pnr)
+        parent_id = str(pnr)
+        id = str(nr)
+        user_level = XcomUserLevel.from_str(str(lvl))
         number = int(nr)
         name = str(name).strip()
-        abbr = str(short)
         unit = unit if type(unit) is str else None
-        format = XcomFormat.from_str(str(fmt))
+        data_type = XcomDatapoint._resolve_datatype(str(fmt))
         default = float(dft) if (type(dft) is int or type(dft) is float) else "S" if (dft=="S") else None
         minimum = float(min) if (type(min) is int or type(min) is float) else "S" if (dft=="S") else None
         maximum = float(max) if (type(max) is int or type(max) is float) else "S" if (dft=="S") else None
         increment = float(inc) if (type(inc) is int or type(inc) is float) else "S" if (dft=="S") else None
         options = opt if type(opt) is dict else None
+        access = XcomDatapoint._resolve_accesss(number, user_level, default)
+        target = XcomDatapoint._resolve_target(number)
             
-        return XcomDatapoint(family_id, level, parent, number, name, abbr, unit, format, default, minimum, maximum, increment, options)
-        
-    @property
-    def category(self) -> XcomCategory:
-        if self.level in [XcomLevel.INFO]:
-            return XcomCategory.INFO
+        return StuderDatapoint(
+            family_id = family_id, 
+            parent_id = parent_id, 
+            id = id,
+            userlevel_r = user_level, 
+            userlevel_w = user_level, 
+            nr_or_addr = number, 
+            name = name, 
+            label = name, 
+            unit = unit, 
+            data_type = data_type, 
+            size = None,
+            access = access,
+            target = target,
+            default = default, 
+            min = minimum, 
+            max = maximum, 
+            inc = increment,
+            enum_id = None,
+            enum_options = options
+        )
 
-        if self.level in [XcomLevel.VO, XcomLevel.BASIC, XcomLevel.EXPERT, XcomLevel.INST, XcomLevel.QSP]:
-            return XcomCategory.PARAMETER
+
+    @classmethod
+    def _resolve_accesss(cls, nr, user_level, default) -> StuderAccess:
+        if user_level in [StuderUserLevel.INFO]:
+            return StuderAccess.READ
+
+        if user_level in [StuderUserLevel.VIEWONLY, StuderUserLevel.BASIC, StuderUserLevel.EXPERT, StuderUserLevel.INSTALLER, StuderUserLevel.STUDER]:
+            if default in ['S']:
+                return StuderAccess.WRITE   # used for Signal
+            else:
+                return StuderAccess.READ_WRITE
             
-        _LOGGER.debug(f"Unknown category for datapoint {self.nr} with level {self.level} and format {self.format}")
-        return XcomCategory.INFO
-    
-    @property
-    def target(self) -> XcomTarget:
-        if NR_VIRTUAL_START <= self.nr <= NR_VIRTUAL_END:
-            return XcomTarget.VIRTUAL
-        else:
-            return XcomTarget.STANDARD
-    
-    def enum_value(self, key):
-        if self.format not in [XcomFormat.LONG_ENUM, XcomFormat.SHORT_ENUM]:
-            return None
-        
-        key = str(key)
-        if not isinstance(self.options, dict) or key not in self.options:
-            return key
-        else:
-            return self.options[key]
-    
-    def enum_key(self, value):
-        if self.format not in [XcomFormat.LONG_ENUM, XcomFormat.SHORT_ENUM]:
-            return None
-        
-        if not isinstance(self.options, dict) or value not in self.options.values():
-            return None
-        else:
-            key = next((key for key,val in self.options.items() if val==value), None)
-            return int(key)
+        _LOGGER.debug(f"Unknown user-level for datapoint {nr} with level {user_level}")
+        return StuderAccess.READ
 
 
+    @classmethod
+    def _resolve_target(cls, nr) -> StuderTarget:
+        if XcomDatapoint.NR_VIRTUAL_START <= nr <= XcomDatapoint.NR_VIRTUAL_END:
+            return StuderTarget.VIRTUAL
+        else:
+            return StuderTarget.STANDARD
 
-class XcomDataset:
+
+    @classmethod
+    def _resolve_datatype(cls, s: str, default: StuderDataType = None) -> StuderDataType:
+        match s.upper():
+            case 'BOOL': return StuderDataType.BOOL
+            case 'FORMAT': return StuderDataType.FORMAT
+            case 'SHORT_ENUM' | 'SHORT ENUM': return StuderDataType.ENUM16
+            case 'ERROR': return StuderDataType.ERROR
+            case 'INT32': return StuderDataType.INT32
+            case 'FLOAT': return StuderDataType.FLOAT32
+            case 'LONG_ENUM' | 'LONG ENUM': return StuderDataType.ENUM32
+            case 'GUID': return StuderDataType.GUID
+            case 'STRING': return StuderDataType.STRING
+            case 'DYNAMIC': return StuderDataType.DYNAMIC
+            case 'MENU' | 'ONLY_LEVEL' | 'ONLY LEVEL': return StuderDataType.MENU
+            case 'NOT SUPPORTED': return StuderDataType.INVALID
+            case _: 
+                if default is not None:
+                    return default
+                else:
+                    msg = f"Unknown format: '{s}'"
+                    raise Exception(msg)
+
+
+class XcomDataset(StuderDataset):
 
     PATH_120V = __file__.replace('.py', '_120v.json')
     PATH_240V = __file__.replace('.py', '_240v.json')
     PATH_XCOM = __file__.replace('.py', '_xcom.json')
-
-    def __init__(self, datapoints: list[XcomDatapoint] | None = None):
-        self._datapoints = datapoints
-
-
-    def get_by_nr(self, nr: int, family_id: str|None = None) -> XcomDatapoint:
-        for point in self._datapoints:
-            if point.nr == nr and (point.family_id == family_id or family_id is None):
-                return point
-
-        raise XcomDatapointUnknownException(nr, family_id)
-    
-
-    def get_by_name(self, name: str, family_id: str|None = None) -> XcomDatapoint:
-        for point in self._datapoints:
-            if point.name == name and (point.family_id == family_id or family_id is None):
-                return point
-
-        raise XcomDatapointUnknownException(name, family_id)
-    
-
-    def get_menu_items(self, parent: int = 0, family_id: str|None = None):
-        datapoints = []
-        for point in self._datapoints:
-            if point.parent == parent and (point.family_id == family_id or family_id is None):
-                datapoints.append(point)
-
-        return datapoints
 
