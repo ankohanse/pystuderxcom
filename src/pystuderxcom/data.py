@@ -18,7 +18,7 @@ import uuid
 from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderDataType,
 )
 from .const import (

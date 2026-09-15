@@ -31,10 +31,12 @@ from .datapoints import (
     XcomDatapoint,
     XcomDataset,
 )
-from .families import (
-    XcomDeviceFamilies,
+from .factory_async import (
+    AsyncXcomFactory,
 )
-
+from .factory_sync import (
+    XcomFactory,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,19 +52,21 @@ class XcomValuesItem():
     def __init__(self, datapoint: XcomDatapoint, code:str|None=None, address:int|None=None, aggregation_type:XcomAggregationType|None=None, value:Any=None, error:str|None=None):
 
         # Convert from code, addr and aggr. Code trumps addr and aggr, while addr trumps aggr.
+        families = XcomFactory.create_families()
+
         if code is not None:
             code = code
-            addr = XcomDeviceFamilies.get_addr_by_code(code)
-            aggr = XcomDeviceFamilies.get_aggregationtype_by_code(code)
+            addr = families.get_addr_by_code(code)
+            aggr = families.get_aggregationtype_by_code(code)
         
         elif address is not None:
-            code = XcomDeviceFamilies.get_code_by_addr(address, datapoint.family_id)
+            code = families.get_code_by_addr(address, datapoint.family_id)
             addr = address
-            aggr = XcomDeviceFamilies.get_aggregationtype_by_addr(address)
+            aggr = families.get_aggregationtype_by_addr(address)
 
         elif aggregation_type is not None:
-            code = XcomDeviceFamilies.get_code_by_aggregationtype(aggregation_type, datapoint.family_id)
-            addr = XcomDeviceFamilies.get_addr_by_aggregationtype(aggregation_type, datapoint.family_id)
+            code = families.get_code_by_aggregationtype(aggregation_type, datapoint.family_id)
+            addr = families.get_addr_by_aggregationtype(aggregation_type, datapoint.family_id)
             aggr = aggregation_type
 
         else:
@@ -75,6 +79,7 @@ class XcomValuesItem():
         self.aggregation_type = aggr
         self.value = value
         self.error = error
+        self.families = families
 
 
 class XcomValues():

@@ -8,13 +8,13 @@ import logging
 
 from dataclasses import dataclass
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderAccess, 
     StuderDataType, 
     StuderTarget, 
     StuderUserLevel,
 )
-from .shared.dataset import (
+from .shared.studer_dataset import (
     StuderDataset,
     StuderDatapoint,
     StuderDatapointSyntaxException

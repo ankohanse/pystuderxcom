@@ -26,19 +26,7 @@ from .const import (
     STOP_TIMEOUT,
     REQ_TIMEOUT,
     XcomApiTcpMode,
-    XcomAggregationType,
-    ScomAddress,
-    ScomObjType,
-    ScomObjId,
-    ScomServiceId,
-    ScomQspId,
-    ScomErrorCode,
     XcomParamException,
-)
-from .data import (
-    XcomData,
-    XcomDataMessageRsp,
-    MULTI_INFO_REQ_MAX,
 )
 from .factory_async import (
     AsyncXcomFactory,
@@ -46,18 +34,8 @@ from .factory_async import (
 from .factory_sync import (
     XcomFactory,
 )
-from .families import (
-    XcomDeviceFamilies
-)
-from .messages import (
-    XcomMessage,
-)
 from .protocol import (
     XcomPackage,
-)
-from .values import (
-    XcomValues,
-    XcomValuesItem,
 )
 
 
@@ -113,6 +91,10 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
         """
         Start the Xcom Server or Client
         """
+        # Init properties depending on async
+        self._families = await AsyncXcomFactory.create_families()
+        
+        # Connect to the remote gateway
         match self._mode:
             case XcomApiTcpMode.CLIENT: return await self._start_client(timeout)
             case XcomApiTcpMode.SERVER: return await self._start_server(timeout, wait_for_connect)
@@ -273,6 +255,10 @@ class XcomApiTcp(XcomApiBase):
         """
         Start the Xcom Server or Client
         """
+        # Init properties depending on async
+        self._families = XcomFactory.create_families()
+                
+        # Connect to the remote gateway
         match self._mode:
             case XcomApiTcpMode.CLIENT: return self._start_client(timeout)
             case XcomApiTcpMode.SERVER: return self._start_server(timeout)

@@ -10,13 +10,16 @@ import logging
 
 from dataclasses import dataclass
 
-from ..shared.types import (
+from .studer_types import (
     StuderAccess,
     StuderDataType,
     StuderTarget, 
     StuderUserLevel,
+    StuderParamException,
 )
-
+from .studer_families import (
+    StuderDeviceFamilyUnknownException,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +32,38 @@ class StuderDatapointSyntaxException(Exception):
 
 class StuderDatapointEnumNotFoundException(Exception):
     pass
+
+
+@dataclass
+class StuderDeviceFamily():
+    id: str                 # Short id
+    model: str              # Model name
+
+    def get_code(self, addr_or_slave):
+        raise NotImplementedError("Function get_code must be implemented in derived class")
+
+    def __str__(self):
+        return self.id
+    
+    def __repr__(self):
+        return self.id
+
+
+class StuderDeviceFamilies(list[StuderDeviceFamily]):
+
+    def __init__(self, families: list[StuderDeviceFamily] | None = None):
+        super().__init__(families)
+
+    def get_by_id(self, id: str) -> StuderDeviceFamily:
+        for f in self:
+            if f.id == id:
+                return f
+
+        raise StuderDeviceFamilyUnknownException(id)
+
+    @staticmethod
+    def get_by_code(code: str) -> StuderDeviceFamily:
+        raise NotImplementedError("Function get_code must be implemented in derived class")
 
 
 @dataclass
@@ -91,7 +126,7 @@ class StuderDatapoint:
             return None
 
         if not isinstance(bits, list):
-            raise NextParamException(f"Unexpected key {bits} ({type(bits)}) while decoding bitfield; family={self.family_id}, address={self.address}, type={self.data_type}")
+            raise StuderParamException(f"Unexpected key {bits} ({type(bits)}) while decoding bitfield; family={self.family_id}, address={self.address}, type={self.data_type}")
 
         result = []
         if not any(bits):
@@ -108,16 +143,31 @@ class StuderDatapoint:
 
 class StuderDataset:
 
-    def __init__(self, datapoints: list[StuderDatapoint] | None = None):
+    def __init__(self, datapoints: list[StuderDatapoint], families: list[StuderDeviceFamily]):
         self._datapoints = datapoints
+        self._families = StuderDeviceFamilies(families)
+
+    @property
+    def families(self):
+        return self._families
 
 
-    def get_by_id(self, id: str, family_id: str|None = None) -> StuderDatapoint:
+    def get_by_id(self, id: str, family: StuderDeviceFamily|str|int = None) -> StuderDatapoint:
         """
         Find a datapoint by family and id.
         Family can be omitted as all ids are unique (no overlap between families).
         Can be used in both Xcom and Next context.
         """
+        if id is None:
+            raise StuderParamException(f"Parameter 'id' must be provided in call to get_by_id")
+
+        if isinstance(family, StuderDeviceFamily):
+            family_id = family.id
+        elif isinstance(family, str):
+            family_id = self._families.get_by_id(family).id
+        else:
+            family_id = None
+
         for point in self._datapoints:
             if point.id == id and (point.family_id == family_id or family_id is None):
                 return point
@@ -125,12 +175,22 @@ class StuderDataset:
         raise StuderDatapointUnknownException(id, family_id)
     
 
-    def get_by_nr(self, nr: int, family_id: str|None = None) -> StuderDatapoint:
+    def get_by_nr(self, nr: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
         """
         Find a datapoint by family and nr.
         Family can be omitted as all numbers are unique (no overlap between families).
         Typically used in Xcom context
         """
+        if nr is None:
+            raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
+
+        if isinstance(family, StuderDeviceFamily):
+            family_id = family.id
+        elif isinstance(family, str):
+            family_id = self._families.get_by_id(family).id
+        else:
+            family_id = None
+
         for point in self._datapoints:
             if point.nr == nr and (point.family_id == family_id or family_id is None):
                 return point
@@ -138,12 +198,22 @@ class StuderDataset:
         raise StuderDatapointUnknownException(nr, family_id)
     
 
-    def get_by_address(self, address: int, family_id: str) -> StuderDatapoint:
+    def get_by_address(self, address: int, family: StuderDeviceFamily|str) -> StuderDatapoint:
         """
         Find a datapoint by family and address.
         Family must be provided as there is overlap in numbers between families).
         Typically used in Next context
         """
+        if address is None:
+            raise StuderParamException(f"Parameters 'id' must be provided in call to 'get_by_address'")
+
+        if isinstance(family, StuderDeviceFamily):
+            family_id = family.id
+        elif isinstance(family, str):
+            family_id = self._families.get_by_id(family).id
+        else:
+            raise StuderParamException(f"Parameter 'family' must be provided in call to 'get_by_address' and must be a StuderDeviceFamily or an id-string")
+
         for point in self._datapoints:
             if point.address == address and point.family_id == family_id:
                 return point
@@ -151,7 +221,14 @@ class StuderDataset:
         raise StuderDatapointUnknownException(address, family_id)
     
 
-    def get_menu_items(self, family_id: str, parent_id: str = ""):
+    def get_menu_items(self, family: StuderDeviceFamily|str, parent_id: str = ""):
+
+        if isinstance(family, StuderDeviceFamily):
+            family_id = family.id
+        elif isinstance(family, str):
+            family_id = self._families.get_by_id(family).id
+        else:
+            raise StuderParamException(f"Parameter 'family_id' must be provided in call to 'get_menu_items'")
 
         # Xcom uses "0" as root parent_id, while Next uses ""
         parent_ids = [parent_id] if parent_id else ["","0"]

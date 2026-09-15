@@ -16,7 +16,7 @@ import struct
 
 from io import BufferedWriter, BufferedReader, BytesIO
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderDataType,
 )
 from .const import (

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from typing import Iterable
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderUserLevel
 )
 

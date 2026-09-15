@@ -1,22 +1,30 @@
 
 import pytest
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDeviceFamilies
-from pystuderxcom import XcomDeviceFamilyUnknownException, XcomDeviceCodeUnknownException, XcomDeviceAddrUnknownException, XcomParamException
 from pystuderxcom import XcomAggregationType
+from pystuderxcom import StuderDeviceFamilyUnknownException, StuderDeviceCodeUnknownException, StuderDeviceAddressUnknownException, StuderParamException
 
 
-def test_list():
-    families = XcomDeviceFamilies.get_list()
+async def test_create_async():
+    families = await AsyncXcomFactory.create_families()
+    assert isinstance(families, XcomDeviceFamilies)
+    assert len(families) == 10
+
+
+def test_create_sync():
+    families = XcomFactory.create_families()
+    assert isinstance(families, XcomDeviceFamilies)
     assert len(families) == 10
 
 
 def test_id():
-    families = XcomDeviceFamilies.get_list()
+    families = XcomFactory.create_families()
     for family in families:
-        assert family == XcomDeviceFamilies.get_by_id(family.id)
+        assert family == families.get_by_id(family.id)
 
-    with pytest.raises(XcomDeviceFamilyUnknownException):
-        family = XcomDeviceFamilies.get_by_id("XXX")
+    with pytest.raises(StuderDeviceFamilyUnknownException):
+        family = families.get_by_id("XXX")
 
 
 @pytest.mark.parametrize(
@@ -40,15 +48,16 @@ def test_id():
 )
 def test_code(family_id, code, addr, aggr):
 
-    family = XcomDeviceFamilies.get_by_id(family_id)
+    families = XcomFactory.create_families()
+    family = families.get_by_id(family_id)
 
     if addr is not None:
-        assert XcomDeviceFamilies.get_by_code(code) == family
+        assert families.get_by_code(code) == family
     else:
-        assert XcomDeviceFamilies.get_by_code(code) is None
+        assert families.get_by_code(code) is None
 
-    assert XcomDeviceFamilies.get_addr_by_code(code) == addr
-    assert XcomDeviceFamilies.get_aggregationtype_by_code(code) == aggr
+    assert families.get_addr_by_code(code) == addr
+    assert families.get_aggregationtype_by_code(code) == aggr
 
 
 @pytest.mark.parametrize(
@@ -75,16 +84,17 @@ def test_code(family_id, code, addr, aggr):
 )
 def test_addr(family_id, addr, fam_code, code, aggr):
 
-    family = XcomDeviceFamilies.get_by_id(family_id)
+    families = XcomFactory.create_families()
+    family = families.get_by_id(family_id)
 
     if fam_code is not None:
         assert family.get_code(addr) == fam_code
     else:
-        with pytest.raises(XcomDeviceAddrUnknownException):
+        with pytest.raises(StuderDeviceAddressUnknownException):
             family.get_code(addr)
 
-    assert XcomDeviceFamilies.get_code_by_addr(addr, family.id) == code
-    assert XcomDeviceFamilies.get_aggregationtype_by_addr(addr) == aggr
+    assert families.get_code_by_addr(addr, family.id) == code
+    assert families.get_aggregationtype_by_addr(addr) == aggr
 
 
 @pytest.mark.parametrize(
@@ -138,8 +148,10 @@ def test_addr(family_id, addr, fam_code, code, aggr):
 )
 def test_aggr(family_id, aggr, code, addr):
 
-    assert XcomDeviceFamilies.get_code_by_aggregationtype(aggr, family_id) == code
-    assert XcomDeviceFamilies.get_addr_by_aggregationtype(aggr, family_id) == addr
+    families = XcomFactory.create_families()
+    
+    assert families.get_code_by_aggregationtype(aggr, family_id) == code
+    assert families.get_addr_by_aggregationtype(aggr, family_id) == addr
 
 
 

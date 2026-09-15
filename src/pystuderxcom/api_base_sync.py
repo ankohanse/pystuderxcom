@@ -8,13 +8,13 @@ import logging
 
 from datetime import datetime, timedelta
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderAccess,
     StuderDataType,
     StuderTarget,
     StuderUserLevel,
 )
-from .shared.dataset import (
+from .shared.studer_dataset import (
     StuderDatapoint,
 )
 from .const import (
@@ -84,6 +84,8 @@ class XcomApiBase:
         self._request_id = 0
         self._sendRequestLock = threading.Lock() # to make sure _sendRequest_inner is never called concurrently
 
+        self._families: XcomDeviceFamilies = None
+        
         # Cached values
         self._msg_set = None
         self._latest_frame_flags: int = None   # most recent received frame flags, used for various status flags
@@ -210,7 +212,7 @@ class XcomApiBase:
             
         # Check/convert input parameters        
         if type(dstAddr) is str:
-            dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
+            dstAddr = self._families.get_addr_by_code(dstAddr)
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
@@ -499,7 +501,7 @@ class XcomApiBase:
             return None
 
         if type(dstAddr) is str:
-            dstAddr = XcomDeviceFamilies.get_addr_by_code(dstAddr)
+            dstAddr = self._families.get_addr_by_code(dstAddr)
 
         _LOGGER.debug(f"Update value {parameter} on address {dstAddr}")
 

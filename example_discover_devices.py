@@ -27,7 +27,7 @@ def main():
         
         helper = XcomDiscover(api, dataset)
 
-        # Discover Xcom gatway info
+        # Discover Xcom gateway info
         gw_info = helper.discover_gateway_info()
 
         logger.info(f"\n\n")

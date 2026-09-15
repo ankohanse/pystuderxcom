@@ -13,6 +13,9 @@ from enum import IntEnum, StrEnum
 _LOGGER = logging.getLogger(__name__)
 
 
+class StuderParamException(Exception):
+    """Exception to indicate that a parameter is not valid"""
+
 class StuderDiscoverNotConnected(Exception):
     """Exception to indicate that remote gateway is not connected"""
 
@@ -60,13 +63,13 @@ class StuderDataType(StrEnum):
     SIGNAL     = "SIGNAL"       # 1 byte
     INT16      = "INT16"        # 2 bytes
     UINT16     = "UINT16"       # 2 bytes
-    ENUM16     = "ENUM16"       # 2 bytes
     FORMAT     = "FORMAT"       # 2 bytes
+    ENUM16     = "ENUM16"       # 2 bytes
     ERROR      = "ERROR"        # 2 bytes
     INT32      = "INT32"        # 4 bytes
     UINT32     = "UINT32"       # 4 bytes
     FLOAT32    = "FLOAT32"      # 4 bytes
-    ENUM32     = "ENUM32"       # 4 bytes
+    ENUM32     = "ENUM32"          # 4 bytes
     BITFIELD   = "BITFIELD"     # 4 bytes
     INT64      = "INT64"        # 8 bytes
     UINT64     = "UINT64"       # 8 bytes

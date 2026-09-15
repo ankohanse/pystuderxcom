@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass
 
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderUserLevel,
 )
 from .const import (

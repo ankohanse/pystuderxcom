@@ -3,8 +3,7 @@ import logging
 import sys
 
 from pystuderxcom import StuderDataType
-from pystuderxcom import AsyncXcomFactory
-from pystuderxcom import XcomFactory
+from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomVoltage
 from pystuderxcom import XcomDeviceFamilies
 from helper import RunHelper
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 async def main():
     # Print entire menu structure
     dataset = await AsyncXcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltage.DC24 
+    families = await AsyncXcomFactory.create_families()
 
     # Helper function to recursively print the entire menu
     async def print_menu(family_id, parent_id, indent="    "):
@@ -29,7 +29,7 @@ async def main():
             else:
                 logger.info(f"{indent}{item.label} ({item.address})")
 
-    for family in XcomDeviceFamilies.get_list():
+    for family in families:
         logger.info(f"")
         logger.info(f"{family.model}")
         await print_menu(family.id, "", "  ")

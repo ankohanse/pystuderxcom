@@ -10,20 +10,20 @@ import struct
 from dataclasses import dataclass
 from enum import StrEnum
 
-from .shared.types import (
+from .shared.studer_types import (
     StuderDiscoveredDevice, 
     StuderDiscoveredGateway,
     StuderDiscoverNotConnected,
 )
-from .shared.dataset import (
+from .shared.studer_dataset import (
     StuderDatapointUnknownException,
     StuderDataset,
 )
-from .shared.interfaces_async import (
+from .shared.studer_interfaces_async import (
     AsyncStuderDiscover,
     StuderDiscoverFlags,
 )
-from .shared.interfaces_sync import (
+from .shared.studer_interfaces_sync import (
     StuderDiscover,
 )
 from .api_base_async import (
@@ -34,13 +34,6 @@ from .api_base_sync import (
 )
 from .const import (
     XcomTarget,
-)
-from .datapoints import (
-    XcomDatapoint,
-    XcomDataset,
-)
-from .families import (
-    XcomDeviceFamilies
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,6 +50,7 @@ class AsyncXcomDiscover(AsyncStuderDiscover):
         """
         self._api = api
         self._dataset = dataset
+        self._families = dataset.families
 
 
     async def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[StuderDiscoveredDevice]:
@@ -70,7 +64,7 @@ class AsyncXcomDiscover(AsyncStuderDiscover):
             raise StuderDiscoverNotConnected("XcomApi is not connected to remote client; please connect first.")
         
         # Check presence of devices for each family
-        for family in XcomDeviceFamilies.get_list():
+        for family in self._families:
 
             _LOGGER.info(f"Trying family {family.id} ({family.model})")
 
@@ -130,7 +124,7 @@ class AsyncXcomDiscover(AsyncStuderDiscover):
         # ID FID msb/lsb
         try:
             _LOGGER.info(f"Trying to get extended device info for device {device.code})")
-            family = XcomDeviceFamilies.get_by_id(device.family_id)
+            family = self._families.get_by_id(device.family_id)
 
             param_id_type    = self._dataset.get_by_nr(family.nr_id_type, family.id) if family.nr_id_type is not None else None
             param_id_hw_cmd  = self._dataset.get_by_nr(family.nr_id_hw_cmd, family.id) if family.nr_id_hw_cmd is not None else None
