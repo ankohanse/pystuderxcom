@@ -22,6 +22,10 @@ from .shared.studer_dataset import (
 from .const import (
     XcomUserLevel,
 )
+from .families import (
+    XcomDeviceFamilies,
+)
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -149,3 +153,9 @@ class XcomDataset(StuderDataset):
     PATH_240V = __file__.replace('.py', '_240v.json')
     PATH_XCOM = __file__.replace('.py', '_xcom.json')
 
+
+    def __init__(self, datapoints: list[StuderDatapoint]):
+        """"""
+        families = XcomDeviceFamilies() # singleton instance
+
+        super().__init__(datapoints, families)

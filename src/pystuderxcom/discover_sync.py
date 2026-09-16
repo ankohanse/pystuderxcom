@@ -37,6 +37,9 @@ from .api_base_sync import (
 from .const import (
     XcomTarget,
 )
+from .families import (
+    XcomDeviceFamilies
+)
 import concurrent.futures
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,7 +56,7 @@ class XcomDiscover(StuderDiscover):
         """
         self._api = api
         self._dataset = dataset
-        self._families = dataset.families
+        self._families = XcomDeviceFamilies()   # singleton instance
 
 
     def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[StuderDiscoveredDevice]:

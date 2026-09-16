@@ -212,7 +212,21 @@ class XcomDeviceFamilies(StuderDeviceFamilies):
     )
 
 
-    def __init__(self, list: list[XcomDeviceFamily]):
+    # Single instance of the XcomDeviceFamilies
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Singleton design pattern to make sure we only have a single XcomDeviceFamilies instance"""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self, flags:dict=None):
+        """Initialize the single XcomDeviceFamilies instance"""
+        flags = flags or {}
+
+        # Gather the list of defined Device Families
+        list = [val for val in XcomDeviceFamilies.__dict__.values() if isinstance(val, XcomDeviceFamily)]
         super().__init__(list)
 
         # Fill helper variables once"""

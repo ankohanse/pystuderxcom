@@ -84,8 +84,8 @@ class XcomApiBase:
         self._request_id = 0
         self._sendRequestLock = threading.Lock() # to make sure _sendRequest_inner is never called concurrently
 
-        self._families: XcomDeviceFamilies = None
-        
+        self._families = XcomDeviceFamilies() # singleton instance
+
         # Cached values
         self._msg_set = None
         self._latest_frame_flags: int = None   # most recent received frame flags, used for various status flags

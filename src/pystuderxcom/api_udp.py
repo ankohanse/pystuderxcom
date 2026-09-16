@@ -67,10 +67,6 @@ class AsyncXcomApiUdp(AsyncXcomApiBase):
         """
         Start the Xcom Server and listening to the Xcom client.
         """
-        # Init properties depending on async
-        self._families = await AsyncXcomFactory.create_families()
-                
-        # Connect to the remote gateway
         if not self._connected:
             _LOGGER.info(f"Xcom UDP server start listening on port {self._local_port}")
 
@@ -155,10 +151,6 @@ class XcomApiUdp(XcomApiBase):
         """
         Start the Xcom Server and listening to the Xcom client.
         """
-        # Init properties depending on async
-        self._families = XcomFactory.create_families()
-                
-        # Connect to the remote gateway
         if not self._connected:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self._socket.bind(("", self._local_port))

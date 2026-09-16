@@ -6,20 +6,14 @@ from pystuderxcom import XcomAggregationType
 from pystuderxcom import StuderDeviceFamilyUnknownException, StuderDeviceCodeUnknownException, StuderDeviceAddressUnknownException, StuderParamException
 
 
-async def test_create_async():
-    families = await AsyncXcomFactory.create_families()
-    assert isinstance(families, XcomDeviceFamilies)
-    assert len(families) == 10
-
-
-def test_create_sync():
-    families = XcomFactory.create_families()
+def test_create():
+    families = XcomDeviceFamilies()
     assert isinstance(families, XcomDeviceFamilies)
     assert len(families) == 10
 
 
 def test_id():
-    families = XcomFactory.create_families()
+    families = XcomDeviceFamilies()
     for family in families:
         assert family == families.get_by_id(family.id)
 
@@ -48,7 +42,7 @@ def test_id():
 )
 def test_code(family_id, code, addr, aggr):
 
-    families = XcomFactory.create_families()
+    families = XcomDeviceFamilies()
     family = families.get_by_id(family_id)
 
     if addr is not None:
@@ -84,7 +78,7 @@ def test_code(family_id, code, addr, aggr):
 )
 def test_addr(family_id, addr, fam_code, code, aggr):
 
-    families = XcomFactory.create_families()
+    families = XcomDeviceFamilies()
     family = families.get_by_id(family_id)
 
     if fam_code is not None:
@@ -148,7 +142,7 @@ def test_addr(family_id, addr, fam_code, code, aggr):
 )
 def test_aggr(family_id, aggr, code, addr):
 
-    families = XcomFactory.create_families()
+    families = XcomDeviceFamilies()
     
     assert families.get_code_by_aggregationtype(aggr, family_id) == code
     assert families.get_addr_by_aggregationtype(aggr, family_id) == addr

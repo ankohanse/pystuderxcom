@@ -49,18 +49,6 @@ _LOGGER = logging.getLogger(__name__)
 class AsyncXcomFactory:
 
     @staticmethod
-    async def create_families(flags:dict=None) -> XcomDeviceFamilies:
-        """
-        The actual NextDataset list is kept in separate json files to reduce the memory size needed to load the integration.
-        The list is only loaded during config flow and during initial startup, and then released again.
-        """
-        flags = flags or {}
-        list = [val for val in XcomDeviceFamilies.__dict__.values() if type(val) is XcomDeviceFamily]
-
-        return XcomDeviceFamilies(list)
-
-
-    @staticmethod
     async def create_dataset(voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48, flags:dict=None) -> XcomDataset:
         """
         The actual XcomDataset list is kept in a separate json file to reduce the memory size needed to load the integration.
@@ -122,11 +110,8 @@ class AsyncXcomFactory:
                 dp.max     = round(mult * dp.max    , digits) if dp.max     is not None else None
                 datapoints[idx] = dp
 
-        # Also add all known device-families
-        families = await AsyncXcomFactory.create_families(flags)
-
         _LOGGER.info(f"Using {len(datapoints)} datapoints for {str(voltageAC)} and {str(voltageDC)}")
-        return XcomDataset(datapoints, families)
+        return XcomDataset(datapoints)
 
 
     @staticmethod

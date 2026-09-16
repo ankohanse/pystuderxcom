@@ -80,7 +80,7 @@ class AsyncXcomApiBase:
         self._request_id = 0
         self._sendRequestLock = asyncio.Lock() # to make sure _sendRequest_inner is never called concurrently
 
-        self._families: XcomDeviceFamilies = None
+        self._families = XcomDeviceFamilies() # singleton instance
 
         # Cached values
         self._msg_set = None

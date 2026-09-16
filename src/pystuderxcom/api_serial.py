@@ -73,10 +73,6 @@ class AsyncXcomApiSerial(AsyncXcomApiBase):
         """
         Start the serial connection to the Xcom-232i client.
         """
-        # Init properties depending on async
-        self._families = await AsyncXcomFactory.create_families()
-                
-                
         if not self._connected:
             _LOGGER.info(f"Xcom-232i serial connection start via {self.port}")
 
@@ -169,9 +165,6 @@ class XcomApiSerial(XcomApiBase):
         """
         Start the serial connection to the Xcom-232i client.
         """
-        # Init properties depending on async
-        self._families = XcomFactory.create_families()
-
         if not self._connected:
             _LOGGER.info(f"Xcom-232i serial connection start via {self.port}")
 

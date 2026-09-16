@@ -37,6 +37,10 @@ from .factory_async import (
 from .factory_sync import (
     XcomFactory,
 )
+from .families import (
+    XcomDeviceFamilies,
+)
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +56,7 @@ class XcomValuesItem():
     def __init__(self, datapoint: XcomDatapoint, code:str|None=None, address:int|None=None, aggregation_type:XcomAggregationType|None=None, value:Any=None, error:str|None=None):
 
         # Convert from code, addr and aggr. Code trumps addr and aggr, while addr trumps aggr.
-        families = XcomFactory.create_families()
+        families = XcomDeviceFamilies() # singleton instance
 
         if code is not None:
             code = code

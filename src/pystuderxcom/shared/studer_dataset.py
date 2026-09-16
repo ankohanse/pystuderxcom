@@ -18,6 +18,8 @@ from .studer_types import (
     StuderParamException,
 )
 from .studer_families import (
+    StuderDeviceFamilies,
+    StuderDeviceFamily,
     StuderDeviceFamilyUnknownException,
 )
 
@@ -32,38 +34,6 @@ class StuderDatapointSyntaxException(Exception):
 
 class StuderDatapointEnumNotFoundException(Exception):
     pass
-
-
-@dataclass
-class StuderDeviceFamily():
-    id: str                 # Short id
-    model: str              # Model name
-
-    def get_code(self, addr_or_slave):
-        raise NotImplementedError("Function get_code must be implemented in derived class")
-
-    def __str__(self):
-        return self.id
-    
-    def __repr__(self):
-        return self.id
-
-
-class StuderDeviceFamilies(list[StuderDeviceFamily]):
-
-    def __init__(self, families: list[StuderDeviceFamily] | None = None):
-        super().__init__(families)
-
-    def get_by_id(self, id: str) -> StuderDeviceFamily:
-        for f in self:
-            if f.id == id:
-                return f
-
-        raise StuderDeviceFamilyUnknownException(id)
-
-    @staticmethod
-    def get_by_code(code: str) -> StuderDeviceFamily:
-        raise NotImplementedError("Function get_code must be implemented in derived class")
 
 
 @dataclass
@@ -143,13 +113,9 @@ class StuderDatapoint:
 
 class StuderDataset:
 
-    def __init__(self, datapoints: list[StuderDatapoint], families: list[StuderDeviceFamily]):
+    def __init__(self, datapoints: list[StuderDatapoint], families: StuderDeviceFamilies):
         self._datapoints = datapoints
-        self._families = StuderDeviceFamilies(families)
-
-    @property
-    def families(self):
-        return self._families
+        self._families = families
 
 
     def get_by_id(self, id: str, family: StuderDeviceFamily|str|int = None) -> StuderDatapoint:
