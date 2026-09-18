@@ -27,12 +27,6 @@ from .const import (
     START_TIMEOUT,
     REQ_TIMEOUT,
 )
-from .factory_async import (
-    AsyncXcomFactory,
-)
-from .factory_sync import (
-    XcomFactory,
-)
 from .protocol import (
     XcomPackage,
 )
@@ -135,7 +129,7 @@ class AsyncXcomApiSerial(AsyncXcomApiBase):
         """
         try:
             async with asyncio.timeout(REQ_TIMEOUT):
-                return await AsyncXcomFactory.parse_package(self._reader)
+                return await self._parse_package(self._reader)
         
         except asyncio.exceptions.TimeoutError:
             return None
@@ -223,7 +217,7 @@ class XcomApiSerial(XcomApiBase):
         Exception handling is dealed with by the caller
         """
         try:
-            return XcomFactory.parse_package(self._serial, REQ_TIMEOUT)
+            return self._parse_package(self._serial, REQ_TIMEOUT)
 
         except socket.timeout:
             return None

@@ -7,7 +7,6 @@ import sys
 
 from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import AsyncXcomDiscover, XcomDiscover
-from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomVoltage
 from helper import RunHelper
 
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltagC.DC24 
     api = XcomApiTcp(mode=XcomApiTcpMode.SERVER, listen_port=4001)    # port number configured in Xcom-LAN/Moxa NPort
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48) # or use XcomVoltage.AC120, XcomVoltage.DC12 or XcomVoltagC.DC24 
 
     try:
         if not api.start():

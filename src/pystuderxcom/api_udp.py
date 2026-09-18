@@ -28,12 +28,6 @@ from .const import (
     STOP_TIMEOUT,
     REQ_TIMEOUT,
 )
-from .factory_async import (
-    AsyncXcomFactory,
-)
-from .factory_sync import (
-    XcomFactory,
-)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -119,7 +113,7 @@ class AsyncXcomApiUdp(AsyncXcomApiBase):
             async with asyncio.timeout(REQ_TIMEOUT):
                 data,_ = await self._socket.recvfrom()
             
-                return await AsyncXcomFactory.parse_package_bytes(data)
+                return await self._parse_package_bytes(data)
         
         except asyncio.exceptions.TimeoutError:
             return None
@@ -200,7 +194,7 @@ class XcomApiUdp(XcomApiBase):
         try:
             data = self._socket.recv(XcomPackage.max_length)
             
-            return XcomFactory.parse_package_bytes(data)
+            return self._parse_package_bytes(data)
 
         except socket.timeout:
             return None

@@ -56,7 +56,7 @@ class XcomDiscover(StuderDiscover):
         """
         self._api = api
         self._dataset = dataset
-        self._families = XcomDeviceFamilies()   # singleton instance
+        self._families = XcomDeviceFamilies.get_instance()   # singleton instance
 
 
     def discover_devices(self, getExtendedInfo = False, verbose = False) -> list[StuderDiscoveredDevice]:

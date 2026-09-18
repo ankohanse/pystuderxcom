@@ -31,12 +31,6 @@ from .datapoints import (
     XcomDatapoint,
     XcomDataset,
 )
-from .factory_async import (
-    AsyncXcomFactory,
-)
-from .factory_sync import (
-    XcomFactory,
-)
 from .families import (
     XcomDeviceFamilies,
 )
@@ -56,7 +50,7 @@ class XcomValuesItem():
     def __init__(self, datapoint: XcomDatapoint, code:str|None=None, address:int|None=None, aggregation_type:XcomAggregationType|None=None, value:Any=None, error:str|None=None):
 
         # Convert from code, addr and aggr. Code trumps addr and aggr, while addr trumps aggr.
-        families = XcomDeviceFamilies() # singleton instance
+        families = XcomDeviceFamilies.get_instance() # singleton instance
 
         if code is not None:
             code = code

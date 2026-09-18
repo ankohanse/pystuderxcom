@@ -2,6 +2,7 @@
 
 import asyncio
 import binascii
+from io import BufferedReader
 import logging
 
 from datetime import datetime, timedelta
@@ -37,23 +38,23 @@ from .const import (
     safe_len,
 )
 from .data import (
+    AsyncReader,
+    SyncReader,
     XcomData,
     XcomDataMessageRsp,
     MULTI_INFO_REQ_MAX,
-)
-from .factory_async import (
-    AsyncXcomFactory,
-)
-from .factory_sync import (
-    XcomFactory,
+    read_bytes,
 )
 from .families import (
     XcomDeviceFamilies
 )
 from .messages import (
     XcomMessage,
+    XcomMessageSet,
 )
 from .protocol import (
+    XcomFrame,
+    XcomHeader,
     XcomPackage,
 )
 from .values import (
@@ -80,7 +81,7 @@ class AsyncXcomApiBase:
         self._request_id = 0
         self._sendRequestLock = asyncio.Lock() # to make sure _sendRequest_inner is never called concurrently
 
-        self._families = XcomDeviceFamilies() # singleton instance
+        self._families = XcomDeviceFamilies.get_instance() # singleton instance
 
         # Cached values
         self._msg_set = None
@@ -542,7 +543,7 @@ class AsyncXcomApiBase:
 
         # Make sure we have access to the message_set
         if self._msg_set is None:
-            self._msg_set = await AsyncXcomFactory.create_messageset()
+            self._msg_set = await XcomMessageSet.async_get_instance()
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(
@@ -695,6 +696,39 @@ class AsyncXcomApiBase:
         self._request_id += 1
         return self._request_id
 
+
+    async def _parse_package(self, f: BufferedReader, timeout:float=REQ_TIMEOUT, verbose=False) -> XcomPackage:
+        # package sometimes starts with 0xff
+        skipped = bytearray(b'')
+        ts_end = datetime.now() + timedelta(seconds=timeout)
+
+        while datetime.now() < ts_end:
+            sb = await read_bytes(f, 1)
+            if sb == XcomPackage.start_byte:
+                break
+
+            skipped.extend(sb)
+
+        if verbose and len(skipped) > 0:
+            _LOGGER.debug(f"skip {len(skipped)} bytes until start-byte ({binascii.hexlify(skipped).decode('ascii')})")
+
+        h_raw = await read_bytes(f, XcomHeader.length)
+        h_chk = await read_bytes(f, 2)
+        assert XcomPackage.checksum(h_raw) == h_chk
+        header = XcomHeader.parse_bytes(h_raw)
+
+        f_raw = await read_bytes(f, header.data_length)
+        f_chk = await read_bytes(f, 2)
+        assert XcomPackage.checksum(f_raw) == f_chk
+        frame = XcomFrame.parse_bytes(f_raw)
+
+        return XcomPackage(header, frame)
+
+
+    async def _parse_package_bytes(self, buf: bytes, timeout:float=REQ_TIMEOUT, verbose=False) -> XcomPackage:
+        reader = AsyncReader(buf)
+        return await self._parse_package(reader, timeout, verbose)
+    
 
     async def _add_diagnostics(self, retries: int = None, duration: timedelta = None):
         if retries is not None:

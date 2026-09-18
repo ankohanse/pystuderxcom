@@ -7,7 +7,6 @@ import pytest
 import pytest_asyncio
 
 from pystuderxcom import AsyncXcomApiBase, XcomApiBase
-from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValues, XcomValuesItem
@@ -84,7 +83,7 @@ def test_request_virtual(name, test_nr, test_dest, rsp_frm_flags, rsp_data,exp_v
         rsp_data = request.getfixturevalue(rsp_data)
         rsp_data = rsp_data.pack()
 
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+    dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     def on_receive(api: TestApi):
@@ -171,7 +170,7 @@ def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, 
 )
 def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+    dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     def on_receive(api: TestApi):
@@ -223,7 +222,7 @@ def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_o
 )
 def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):
 
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+    dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
     param = dataset.get_by_nr(test_nr)
 
     def on_receive(api: TestApi):
@@ -264,7 +263,7 @@ def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr,
 
 @pytest.fixture
 def dataset():
-    dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+    dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
     yield dataset
 
 @pytest.fixture

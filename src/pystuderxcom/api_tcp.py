@@ -28,12 +28,6 @@ from .const import (
     XcomApiTcpMode,
     XcomParamException,
 )
-from .factory_async import (
-    AsyncXcomFactory,
-)
-from .factory_sync import (
-    XcomFactory,
-)
 from .protocol import (
     XcomPackage,
 )
@@ -200,7 +194,7 @@ class AsyncXcomApiTcp(AsyncXcomApiBase):
         """
         try:
             async with asyncio.timeout(REQ_TIMEOUT):
-                return await AsyncXcomFactory.parse_package(self._reader)
+                return await self._parse_package(self._reader)
         
         except asyncio.exceptions.TimeoutError:
             return None
@@ -346,4 +340,4 @@ class XcomApiTcp(XcomApiBase):
         """
         data = self._connection.recv(XcomPackage.max_length)
         
-        return XcomFactory.parse_package_bytes(data)
+        return self._parse_package_bytes(data)

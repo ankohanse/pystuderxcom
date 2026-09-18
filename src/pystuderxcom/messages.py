@@ -9,7 +9,13 @@
 
 import logging
 
+from aiofiles import open as aiofiles_open
 from dataclasses import dataclass
+
+import orjson
+
+from pystuderxcom.shared.helpers import HybridLock
+from pystuderxcom.shared.studer_messageset import StuderMessageDef, StuderMessageSet, StuderMessageSyntaxException, StuderMessageUnknownException
 
 
 from .shared.studer_types import (
@@ -28,12 +34,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class XcomMessageDef:
-    PATH_EN = __file__.replace('.py', '_en.json')
-
-    level: StuderUserLevel
-    number: int
-    string: str
+class XcomMessageDef(StuderMessageDef):
+    # From parent class:
+    #   level: StuderUserLevel
+    #   number: int
+    #   string: str
 
     @staticmethod
     def from_dict(d):
@@ -42,41 +47,111 @@ class XcomMessageDef:
         msg = d.get('msg', None)
 
         # Check and convert properties
-        if lvl is None or nr is None or msg is None:
-            return None
+        if "_rem" in d and len(d)==1:
+            return None # Line only contains a comment
         
-        if type(nr) is not int:
-            return None
+        if lvl is None or nr is None or msg is None:
+            raise StuderMessageSyntaxException(f"Missing required field in messageset; lvl={lvl}, nr={nr}, msg={msg}")
+        
+        if not isinstance(nr, int):
+            raise StuderMessageSyntaxException(f"Unexpected field type in messageset, expected int; lvl={lvl}, nr={nr}, msg={msg}")
         
         level = XcomUserLevel.from_str(str(lvl))
         number = int(nr)
         string = str(msg).strip()
             
-        return XcomMessageDef(level, number, string)
+        return XcomMessageDef(
+            level = level, 
+            number = number, 
+            string = string
+        )
         
 
-class XcomMessageUnknownException(Exception):
-    pass
+class XcomMessageSet(StuderMessageSet):
+
+    # Paths to all files definining the messages
+    PATH_EN = __file__.replace('.py', '_en.json')
 
 
-class XcomMessageSet():
+    def __init__(self):
+        raise RuntimeError("Use 'XcomMessageSet.get_instance()' or 'await XcomMessageSet.async_get_instance()' instead of direct instantiation.")
 
-    def __init__(self, messages: list[XcomMessageDef] | None = None):
-        self._messages = messages
+
+    # Single instance of the NextDataset
+    _instance = None
+    _instance_lock = HybridLock()
+
+    @classmethod
+    async def async_get_instance(cls, language: str = "en") -> 'XcomMessageSet':
+        """
+        Async helper function to get singleton instance of XcomMessageSet
+        """
+        async with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                await self._async_init(language)
+                cls._instance = self
+
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls, language: str = "en") -> 'XcomMessageSet':
+        """
+        Sync helper function to get singleton instance of NextDataset
+        """
+        with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                self._init(language)
+                cls._instance = self
+            
+        return cls._instance
+
+    @classmethod
+    def del_instance(cls):
+        """Used for intermediate cleanup during unit tests"""
+        cls._instance = None
+
+
+    async def _async_init(self, language: str = "en"):
+        """
+        The actual XcomMessage list is kept in a separate json file.
+        """
+        match language:
+            case "en": path = XcomMessageSet.PATH_EN # English
+            case _:
+                msg = f"Unknown language: '{language}'"
+                raise Exception(msg)
+        
+        async with aiofiles_open(path, "r", encoding="UTF-8") as f:
+            text = await f.read()
+        
+        values = orjson.loads(text)
+        messages = list(filter(None, [XcomMessageDef.from_dict(val) for val in values]))
+
+        super().__init__(messages)
+
+
+    def _init(self, language: str = "en"):
+        """
+        The actual XcomMessage list is kept in a separate json file.
+        """
+        match language:
+            case "en": path = XcomMessageSet.PATH_EN # English
+            case _:
+                msg = f"Unknown language: '{language}'"
+                raise Exception(msg)
+        
+        with open(path, "r", encoding="UTF-8") as f:
+            text = f.read()
+        
+        values = orjson.loads(text)
+        messages = list(filter(None, [XcomMessageDef.from_dict(val) for val in values]))
+
+        super().__init__(messages)
    
-
-    def get_by_nr(self, nr: int) -> XcomMessageDef:
-        for msg in self._messages:
-            if msg.number == nr:
-                return msg
-
-        raise XcomMessageUnknownException(nr)
-
-
-    def str_by_nr(self, nr: int) -> str:
-        msg = self.get_by_nr(nr)
-        return msg.string
-
 
 class XcomMessage(XcomDataMessageRsp):
 

@@ -4,10 +4,9 @@ from datetime import datetime
 import math
 import pytest
 import pytest_asyncio
-from pystuderxcom import AsyncXcomFactory
-from pystuderxcom import XcomFactory
 from pystuderxcom import XcomPackage, XcomDataset, XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
 from pystuderxcom import XcomAggregationType, ScomServiceId, ScomObjType, ScomQspId, ScomAddress
+from pystuderxcom import AsyncXcomApiBase, XcomApiBase
 
 
 @pytest.fixture
@@ -114,7 +113,8 @@ def test_package_props(fixture, exp_src_addr, exp_dst_addr, exp_svc_id, exp_svc_
     assert len(buf) > 0
 
     # Test parse_bytes (calls parse)
-    clone = XcomFactory.parse_package_bytes(buf)
+    api = XcomApiBase()
+    clone = api._parse_package_bytes(buf)
 
     assert clone.header.src_addr == exp_src_addr
     assert clone.header.dst_addr == exp_dst_addr
@@ -166,8 +166,9 @@ def test_package_flags(name, fixture, modify_flags, modify_data, expected_isResp
     assert package.get_error() == expected_getError
 
     # Test get_bytes and parse_bytes
+    api = XcomApiBase()
     buf = package.get_bytes()
-    clone = XcomFactory.parse_package_bytes(buf)
+    clone = api._parse_package_bytes(buf)
 
     assert clone.is_response() == expected_isResponse
     assert clone.is_error() == expected_isError

@@ -7,6 +7,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from pystuderxcom.shared.helpers import HybridLock
+
 from .shared.studer_families import (
     StuderDeviceFamilies,
     StuderDeviceFamily,
@@ -212,17 +214,45 @@ class XcomDeviceFamilies(StuderDeviceFamilies):
     )
 
 
+    def __init__(self):
+        raise RuntimeError("Use 'XcomDeviceFamilies.get_instance()' or 'await XcomDeviceFamilies.async_get_instance()' instead of direct instantiation.")
+
     # Single instance of the XcomDeviceFamilies
     _instance = None
+    _instance_lock = HybridLock()
 
-    def __new__(cls, *args, **kwargs):
-        """Singleton design pattern to make sure we only have a single XcomDeviceFamilies instance"""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
+    @classmethod
+    async def async_get_instance(cls, flags:dict=None) -> 'XcomDeviceFamilies':
+        """
+        Async helper function to get singleton instance of XcomDeviceFamilies
+        """
+        async with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                self._init(flags)   # For now, we only need sync initalization
+                cls._instance = self
+
         return cls._instance
-    
-    def __init__(self, flags:dict=None):
-        """Initialize the single XcomDeviceFamilies instance"""
+
+    @classmethod
+    def get_instance(cls, flags:dict=None) -> 'XcomDeviceFamilies':
+        """
+        Sync helper function to get singleton instance of XcomDeviceFamilies
+        """
+        with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                self._init(flags)
+                cls._instance = self
+            
+        return cls._instance
+
+    def _init(self, flags:dict=None):
+        """
+        Initialize the XcomDeviceFamilies instance
+        """
         flags = flags or {}
 
         # Gather the list of defined Device Families

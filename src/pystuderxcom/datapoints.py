@@ -4,10 +4,17 @@
 # Definition of all parameters / constants used in the Xcom protocol
 ##
 
+import decimal
 import logging
+import orjson
 
+from aiofiles import open as aiofiles_open
 from dataclasses import dataclass
+from enum import StrEnum
 
+from .shared.helpers import (
+    HybridLock,
+)
 from .shared.studer_types import (
     StuderAccess, 
     StuderDataType, 
@@ -21,6 +28,7 @@ from .shared.studer_dataset import (
 )
 from .const import (
     XcomUserLevel,
+    XcomVoltage,
 )
 from .families import (
     XcomDeviceFamilies,
@@ -154,8 +162,140 @@ class XcomDataset(StuderDataset):
     PATH_XCOM = __file__.replace('.py', '_xcom.json')
 
 
-    def __init__(self, datapoints: list[StuderDatapoint]):
-        """"""
-        families = XcomDeviceFamilies() # singleton instance
+    def __init__(self):
+        raise RuntimeError("Use 'XcomDataset.get_instance()' or 'await XcomDataset.async_get_instance()' instead of direct instantiation.")
 
+    # Single instance of the XcomDataset
+    _instance = None
+    _instance_lock = HybridLock()
+
+    @classmethod
+    async def async_get_instance(cls, voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48, flags:dict=None) -> 'XcomDataset':
+        """
+        Async helper function to get singleton instance of XcomDataset
+        """
+        async with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                await self._async_init(voltageAC, voltageDC, flags)
+                cls._instance = self
+
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls, voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48, flags:dict=None) -> 'XcomDataset':
+        """
+        Sync helper function to get singleton instance of XcomDataset
+        """
+        with cls._instance_lock:
+            if cls._instance is None:
+                # Create a bare instance without calling __init__
+                self = super().__new__(cls)
+                self._init(voltageAC, voltageDC, flags)
+                cls._instance = self
+            
+        return cls._instance
+
+    @classmethod
+    def del_instance(cls):
+        """Used for intermediate cleanup during unit tests"""
+        cls._instance = None
+
+
+    async def _async_init(self, voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48, flags:dict=None):
+        """
+        Perform the actual async initialization
+        """
+        flags = flags or {}
+
+        async with aiofiles_open(XcomDataset.PATH_120V, "r", encoding="UTF-8") as file_120vac:
+            text_120vac = await file_120vac.read()
+        async with aiofiles_open(XcomDataset.PATH_240V, "r", encoding="UTF-8") as file_240vac:
+            text_240vac = await file_240vac.read()
+        async with aiofiles_open(XcomDataset.PATH_XCOM, "r", encoding="UTF-8") as file_xcom:
+            text_xcom = await file_xcom.read()
+        
+        values_120vac = orjson.loads(text_120vac)
+        values_240vac = orjson.loads(text_240vac)
+        values_xcom   = orjson.loads(text_xcom)
+
+        datapoints = self._get_datapoints_from_values(voltageAC, voltageDC, values_120vac, values_240vac, values_xcom)
+        families = await XcomDeviceFamilies.async_get_instance() # singleton instance
+
+        _LOGGER.info(f"Using {len(datapoints)} datapoints")
         super().__init__(datapoints, families)
+
+
+    def _init(self, voltageAC:str=XcomVoltage.AC240, voltageDC:str=XcomVoltage.DC48, flags:dict=None):
+        """
+        Perform the actual async initialization
+        """
+        flags = flags or {}
+
+        with open(XcomDataset.PATH_120V, "r", encoding="UTF-8") as file_120vac:
+            text_120vac = file_120vac.read()
+        with open(XcomDataset.PATH_240V, "r", encoding="UTF-8") as file_240vac:
+            text_240vac = file_240vac.read()
+        with open(XcomDataset.PATH_XCOM, "r", encoding="UTF-8") as file_xcom:
+            text_xcom = file_xcom.read()
+        
+        values_120vac = orjson.loads(text_120vac)
+        values_240vac = orjson.loads(text_240vac)
+        values_xcom   = orjson.loads(text_xcom)
+
+        datapoints = self._get_datapoints_from_values(voltageAC, voltageDC, values_120vac, values_240vac, values_xcom)
+        families = XcomDeviceFamilies.get_instance() # singleton instance
+
+        _LOGGER.info(f"Using {len(datapoints)} datapoints")
+        super().__init__(datapoints, families)
+
+
+    def _get_datapoints_from_values(self, voltageAC, voltageDC, values_120vac, values_240vac, values_xcom):
+        """
+        """
+        datapoints_120vac = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_120vac]))
+        datapoints_240vac = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_240vac]))
+        datapoints_xcom   = list(filter(None, [XcomDatapoint.from_dict(val) for val in values_xcom]))
+
+        # start with the merged 240v + xcom lists as base
+        datapoints = datapoints_240vac + datapoints_xcom
+
+        match voltageAC:
+            case XcomVoltage.AC240:
+                pass
+            case XcomVoltage.AC120:
+                # Merge the 120v list into the 240v one by replacing duplicates. This maintains the order of menu items
+                for dp120 in datapoints_120vac:
+                    # already in result?
+                    index = next( (idx for idx,dp240 in enumerate(datapoints) if dp120.nr == dp240.nr and dp120.family_id == dp240.family_id ), None)
+                    if index is not None:
+                        datapoints[index] = dp120
+            case _:
+                msg = f"Unknown AC voltage: '{voltageAC}'"
+                raise Exception(msg)
+        
+        # Standard list is for 48vdc. Adapt for 12 or 24vdc if needed.
+        match voltageDC:
+            case XcomVoltage.DC48: mult = 1.0
+            case XcomVoltage.DC24: mult = 0.5
+            case XcomVoltage.DC12: mult = 0.25
+            case _: 
+                msg = f"Unknown DC voltage: '{voltageDC}'"
+                raise Exception(msg)
+            
+        for idx,dp in enumerate(datapoints):
+            if dp.unit=="Vdc" and \
+               dp.min is not None and dp.min > 24.0 and \
+               dp.max is not None and dp.max < 96.0:
+
+                d = decimal.Decimal(str(dp.inc)) if dp.inc is not None else decimal('1')
+                digits = d.as_tuple().exponent * -1
+
+                dp.default = round(mult * dp.default, digits) if dp.default is not None else None
+                dp.min     = round(mult * dp.min    , digits) if dp.min     is not None else None
+                dp.max     = round(mult * dp.max    , digits) if dp.max     is not None else None
+                datapoints[idx] = dp
+
+        return datapoints
+

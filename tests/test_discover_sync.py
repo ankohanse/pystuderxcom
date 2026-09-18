@@ -7,7 +7,6 @@ import pytest
 import pytest_asyncio
 
 from pystuderxcom import AsyncXcomDiscover, XcomDiscover, StuderDiscoverFlags
-from pystuderxcom import AsyncXcomFactory, XcomFactory
 from pystuderxcom import XcomDataset, XcomData, XcomPackage, XcomVoltage
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
 from pystuderxcom import ScomServiceId, ScomObjType, ScomQspId, ScomErrorCode
@@ -45,7 +44,7 @@ class TestContext():
         self.discover = None
 
     def start_discover(self, rsp_dest, rsp_dict):
-        self.dataset = XcomFactory.create_dataset(XcomVoltage.AC240, XcomVoltage.DC48)
+        self.dataset = XcomDataset.get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
         self.api = TestApi(on_receive_handler=on_receive, rsp_dest=rsp_dest, rsp_dict=rsp_dict)
     
         self.discover = XcomDiscover(self.api, self.dataset)    
