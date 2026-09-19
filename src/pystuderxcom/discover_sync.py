@@ -4,43 +4,24 @@
 
 import asyncio
 import httpx
-import ipaddress
 import logging
-import os
 import struct
 
 from dataclasses import dataclass
 from enum import StrEnum
+from ipaddress import IPv4Address, IPv6Address, ip_address
 
-from .shared.studer_types import (
-    StuderDiscoveredDevice, 
-    StuderDiscoveredGateway,
-    StuderDiscoverNotConnected,
-)
-from .shared.studer_dataset import (
-    StuderDatapointUnknownException,
-    StuderDataset,
-)
-from .shared.studer_interfaces_async import (
-    AsyncStuderDiscover,
-    StuderDiscoverFlags,
-)
-from .shared.studer_interfaces_sync import (
-    StuderDiscover,
-)
-from .api_base_async import (
-    AsyncXcomApiBase,
-)
-from .api_base_sync import (
-    XcomApiBase,
-)
-from .const import (
-    XcomTarget,
-)
-from .families import (
-    XcomDeviceFamilies
-)
+from .shared.helpers import StuderNetworkHelper
+from .shared.studer_dataset import StuderDataset, StuderDatapointUnknownException
+from .shared.studer_interfaces_async import AsyncStuderDiscover, StuderDiscoverFlags
+from .shared.studer_interfaces_sync import StuderDiscover
+from .shared.studer_types import StuderDiscoveredDevice, StuderDiscoveredGateway, StuderDiscoverNotConnected
+from .api_base_async import AsyncXcomApiBase
+from .api_base_sync import XcomApiBase
+from .const import XcomTarget
+from .families import XcomDeviceFamilies
 import concurrent.futures
+
 
 _LOGGER = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -215,7 +196,7 @@ class XcomDiscover(StuderDiscover):
         client_guid = None
 
         try:
-            client_ip = str(ipaddress.ip_address(self._api.remote_ip))
+            client_ip = str(ip_address(self._api.remote_ip))
 
             _LOGGER.info(f"  Found ip: {client_ip}")
 
@@ -246,26 +227,13 @@ class XcomDiscover(StuderDiscover):
         Discover if Moxa Web Config page can be found on the local network
         """
 
-        # Find all device IP addresses to check
-        urls: list[str] = [hint] if hint else []
-        urls.append("http://192.168.127.254")   # default if using static address
+       # Find all device IP addresses to check
+        ips: set[IPv4Address|IPv6Address] = set()
+        ips.update( StuderNetworkHelper.get_local_ips_via_arp() )
+        ips.update( StuderNetworkHelper.get_local_ips_via_network())
 
-        for line in os.popen('arp -a'):     # arp seems to be available on Linux, Windows and Pi
-            try:
-                # Linux:  
-                #   ? (192.168.88.250) at 00:90:e8:3c:f8:7e [ether] on end0
-                #   ...
-                # Windows: 
-                #   Interface: 192.168.88.100 --- 0x4
-                #     Internet Address      Physical Address      Type
-                #     192.168.88.250        00-90-e8-3c-f8-7e     dynamic 
-                #     ...
-                
-                device = line.strip('?').split()[0].strip('()')
-                ip = ipaddress.ip_address(device)
-                urls.append(f"http://{str(ip)}")
-            except:
-                pass
+        urls: set[str] = {hint} if hint else set()
+        urls.update( [ f"http://{str(ip)}" for ip in ips])
 
         # Define helper function to check for Moxa Web Config page
         def check_url(client:httpx.Client, url:str) -> str|None:

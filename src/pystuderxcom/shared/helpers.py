@@ -1,7 +1,16 @@
 import asyncio
+import logging
+import os
+import socket
 import threading
+
+from ipaddress import IPv4Network, IPv4Address, IPv6Address, ip_address
 from types import TracebackType
 from typing import Optional, Type
+
+
+_LOGGER = logging.getLogger(__name__)
+
 
 class HybridLock:
     """A lock that can be used interchangeably with both 'with' and 'async with'."""
@@ -38,3 +47,60 @@ class HybridLock:
     ) -> None:
         # Releasing a threading.Lock is instantaneous and non-blocking
         self._lock.release()
+
+
+class StuderNetworkHelper:
+    
+    @staticmethod
+    def get_my_ip():
+        """
+        Find my IP address
+        :return:
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+
+
+    @staticmethod
+    def get_local_ips_via_arp() -> set[IPv4Address|IPv6Address]:
+        """
+        Find ip address candidates known in the local network.
+        Will only return addresses that this computer had recently communicated with
+        """
+        ips: set[str] = set()
+        for line in os.popen('arp -a'):     # arp seems to be available on Linux, Windows and Pi
+            try:
+                # Linux:  
+                #   ? (192.168.88.250) at 00:90:e8:3c:f8:7e [ether] on end0
+                #   ...
+                # Windows: 
+                #   Interface: 192.168.88.100 --- 0x4
+                #     Internet Address      Physical Address      Type
+                #     192.168.88.250        00-90-e8-3c-f8-7e     dynamic 
+                #     ...
+                
+                device = line.strip('?').split()[0].strip('()')
+                ips.add( ip_address(device) )
+            except:
+                pass
+
+        return ips
+
+
+    @staticmethod
+    def get_local_ips_via_network():
+        """
+        Find ip address candidates known in the local network
+        """
+        ips: set[str] = set()
+
+        local_ip = StuderNetworkHelper.get_my_ip()
+        network = IPv4Network(f"{local_ip}/24", strict=False)
+        for host in network.hosts():
+            ips.add( host )
+
+        return ips
+
