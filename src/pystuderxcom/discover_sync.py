@@ -227,13 +227,12 @@ class XcomDiscover(StuderDiscover):
         Discover if Moxa Web Config page can be found on the local network
         """
 
-       # Find all device IP addresses to check
-        ips: set[IPv4Address|IPv6Address] = set()
-        ips.update( StuderNetworkHelper.get_local_ips_via_arp() )
-        ips.update( StuderNetworkHelper.get_local_ips_via_network())
-
-        urls: set[str] = {hint} if hint else set()
-        urls.update( [ f"http://{str(ip)}" for ip in ips])
+        # Find all potential urls to check while keeping the right order:
+        # first from hint, then from arp, then others
+        urls_hint: set[str] = {hint} if hint else set()
+        urls_arp: set[str] = { f"http://{str(ip)}" for ip in StuderNetworkHelper.get_local_ips_via_arp() } - urls_hint
+        urls_net: set[str] = { f"http://{str(ip)}" for ip in StuderNetworkHelper.get_local_ips_via_network() } - urls_hint - urls_arp
+        urls :list[str] = list(urls_hint) + list(urls_arp) + list(urls_net)
 
         # Define helper function to check for Moxa Web Config page
         def check_url(client:httpx.Client, url:str) -> str|None:
