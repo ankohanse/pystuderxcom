@@ -1,7 +1,7 @@
 import math
 import pytest
 import pytest_asyncio
-from pystuderxcom import XcomValues, XcomValuesItem
+from pystuderxcom import XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType
 from pystuderxcom import XcomDataset, XcomDatapoint
 
@@ -18,11 +18,11 @@ async def values_req(dataset):
     info_3023 = dataset.get_by_nr(3023)
     info_3032 = dataset.get_by_nr(3032)
 
-    yield XcomValues([
-        XcomValuesItem(info_3021, code='XT1'),
-        XcomValuesItem(info_3022, address=101),
-        XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.MASTER),
-        XcomValuesItem(info_3032, aggregation_type=XcomAggregationType.DEVICE1),
+    yield XcomValueSet([
+        XcomValueItem(datapoint=info_3021, device='XT1'),
+        XcomValueItem(datapoint=info_3022, device=101),
+        XcomValueItem(datapoint=info_3023, aggregation_type=XcomAggregationType.MASTER),
+        XcomValueItem(datapoint=info_3032, aggregation_type=XcomAggregationType.DEVICE1),
     ])
 
 @pytest_asyncio.fixture
@@ -32,14 +32,14 @@ async def values_rsp(dataset):
     info_3023 = dataset.get_by_nr(3023)
     info_3032 = dataset.get_by_nr(3032)
 
-    yield XcomValues(
+    yield XcomValueSet(
         flags = 123,
         datetime = 456,
         items = [
-            XcomValuesItem(info_3021, code='XT1', value=1.0),   # Float
-            XcomValuesItem(info_3022, address=101, value=2.0),     # Float
-            XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.MASTER, value=3.0),   # Float
-            XcomValuesItem(info_3032, aggregation_type=XcomAggregationType.DEVICE1, value=7),    # Long Enum
+            XcomValueItem(datapoint=info_3021, device='XT1', value=1.0),   # Float
+            XcomValueItem(datapoint=info_3022, device=101, value=2.0),     # Float
+            XcomValueItem(datapoint=info_3023, aggregation_type=XcomAggregationType.MASTER, value=3.0),   # Float
+            XcomValueItem(datapoint=info_3032, aggregation_type=XcomAggregationType.DEVICE1, value=7),    # Long Enum
         ]
     )
 
@@ -53,8 +53,8 @@ async def values_rsp(dataset):
 )
 async def test_pack_unpack(name, values_fixture, request):
     dataset: XcomDataset = request.getfixturevalue("dataset")
-    values_req: XcomValues = request.getfixturevalue("values_req")
-    values_def: XcomValues = request.getfixturevalue(values_fixture)
+    values_req: XcomValueSet = request.getfixturevalue("values_req")
+    values_def: XcomValueSet = request.getfixturevalue(values_fixture)
 
     # test pack
     if name=="request":
@@ -66,9 +66,9 @@ async def test_pack_unpack(name, values_fixture, request):
 
     # test unpack
     if name=="request":
-        clone = XcomValues.unpack_request(buf, dataset=dataset)
+        clone = XcomValueSet.unpack_request(buf, dataset=dataset)
     else:
-        clone = XcomValues.unpack_response(buf, values_req)
+        clone = XcomValueSet.unpack_response(buf, values_req)
 
     assert clone is not None
     assert clone.flags == values_def.flags

@@ -22,7 +22,7 @@ from .const import XcomApiWriteException, XcomApiReadException, XcomApiTimeoutEx
 from .datapoints import XcomDataset, XcomDatapoint
 from .families import XcomDeviceFamily, XcomDeviceFamilies
 from .messages import XcomMessageSet, XcomMessageDef, XcomMessage
-from .values import XcomValues, XcomValuesItem
+from .values import XcomValueItem, XcomValueSet
 
 # For unit testing
 from .const import XcomUserLevel, ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomServiceFlag, ScomQspId, ScomQspLevel, ScomAddress, ScomErrorCode

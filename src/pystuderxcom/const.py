@@ -132,7 +132,7 @@ class XcomAggregationType(IntEnum):
     def __repr__(self):
         return self.name
 
-### values for XcomValues.flags
+### values for XcomValueSet.flags
 class XcomMultiInfoFlags(IntEnum):
     XCOM_GSM    = 0x00000010, # XCOM-LAN if 0
     XT_PRESENT  = 0x00000020,

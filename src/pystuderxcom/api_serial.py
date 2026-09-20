@@ -63,7 +63,7 @@ class AsyncXcomApiSerial(AsyncXcomApiBase):
         self._connected = False
 
 
-    async def start(self, timeout=START_TIMEOUT) -> bool:
+    async def start(self) -> bool:
         """
         Start the serial connection to the Xcom-232i client.
         """
@@ -155,7 +155,7 @@ class XcomApiSerial(XcomApiBase):
         self._connected: bool = False
 
 
-    def start(self, timeout=START_TIMEOUT) -> bool:
+    def start(self) -> bool:
         """
         Start the serial connection to the Xcom-232i client.
         """

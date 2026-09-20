@@ -7,7 +7,7 @@ import pytest_asyncio
 from pystuderxcom import AsyncXcomApiBase, XcomApiBase
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
-from pystuderxcom import XcomValues, XcomValuesItem
+from pystuderxcom import XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
 from pystuderxcom import StuderDataType
@@ -270,21 +270,21 @@ async def data_infos_dev(dataset):
     info_3022 = dataset.get_by_nr(3022)
     info_3023 = dataset.get_by_nr(3023)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, code="XT1"),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1),
-        XcomValuesItem(info_3023, address=101),
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, device="XT1"),
+        XcomValueItem(datapoint=info_3023, device=101),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1),
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
-            XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.DEVICE1, value=78.9),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
+            XcomValueItem(datapoint=info_3023, aggregation_type=XcomAggregationType.DEVICE1, value=78.9),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[]
@@ -297,21 +297,21 @@ async def data_infos_aggr(dataset):
     info_3022 = dataset.get_by_nr(3022)
     info_3023 = dataset.get_by_nr(3023)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE),
-        XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.SUM),
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE),
+        XcomValueItem(datapoint=info_3023, aggregation_type=XcomAggregationType.SUM),
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
-            XcomValuesItem(info_3023, aggregation_type=XcomAggregationType.SUM, value=78.9),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
+            XcomValueItem(datapoint=info_3023, aggregation_type=XcomAggregationType.SUM, value=78.9),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[]
@@ -324,24 +324,24 @@ async def data_infos_params_dev(dataset):
     info_3022 = dataset.get_by_nr(3022)
     param_1107 = dataset.get_by_nr(1107)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, code="XT1"),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1),
-        XcomValuesItem(param_1107, address=101),
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, device="XT1"),
+        XcomValueItem(datapoint=param_1107, device=101),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1),
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValueItem(datapoint=param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
         ]
     )
     yield req_data, rsp_multi, rsp_single
@@ -353,24 +353,24 @@ async def data_infos_params_aggr(dataset):
     info_3022 = dataset.get_by_nr(3022)
     param_1107 = dataset.get_by_nr(1107)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE),
-        XcomValuesItem(param_1107, address=101),
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE),
+        XcomValueItem(datapoint=param_1107, device=101),
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValueItem(datapoint=param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
         ]
     )
     yield req_data, rsp_multi, rsp_single
@@ -383,26 +383,26 @@ async def data_infos_virt_dev(dataset):
     param_1107 = dataset.get_by_nr(1107)
     info_99003 = dataset.get_by_nr(99003)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, code="XT1"),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1),
-        XcomValuesItem(param_1107, address=101),
-        XcomValuesItem(info_99003, code="XCOM"), # Make sure to have another single request prior to virtual
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, device="XT1"),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1),
+        XcomValueItem(datapoint=param_1107, device=101),
+        XcomValueItem(datapoint=info_99003, device="XCOM"), # Make sure to have another single request prior to virtual
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
-            XcomValuesItem(info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
+            XcomValueItem(datapoint=param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValueItem(datapoint=info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
         ]
     )
     yield req_data, rsp_multi, rsp_single
@@ -415,26 +415,26 @@ async def data_infos_virt_aggr(dataset):
     param_1107 = dataset.get_by_nr(1107)
     info_99003 = dataset.get_by_nr(99003)
 
-    req_data = XcomValues([
-        XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER),
-        XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE),
-        XcomValuesItem(param_1107, address=101),
-        XcomValuesItem(info_99003, code="XCOM"), # Make sure to have another single request prior to virtual
+    req_data = XcomValueSet([
+        XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER),
+        XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE),
+        XcomValueItem(datapoint=param_1107, device=101),
+        XcomValueItem(datapoint=info_99003, device="XCOM"), # Make sure to have another single request prior to virtual
     ])
-    rsp_multi = XcomValues(
+    rsp_multi = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
-            XcomValuesItem(info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.AVERAGE, value=45.6),
         ]
     )
-    rsp_single = XcomValues(
+    rsp_single = XcomValueSet(
         flags = 0x00, 
         datetime = 0, 
         items=[
-            XcomValuesItem(param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
-            XcomValuesItem(info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
+            XcomValueItem(datapoint=param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+            XcomValueItem(datapoint=info_99003, aggregation_type=XcomAggregationType.DEVICE1, value=True),
         ]
     )
     yield req_data, rsp_multi, rsp_single

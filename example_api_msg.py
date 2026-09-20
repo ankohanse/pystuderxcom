@@ -6,8 +6,6 @@ import logging
 import sys
 
 from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
-from pystuderxcom import XcomData, XcomValues, XcomValuesItem
-from pystuderxcom import XcomVoltage, XcomAggregationType
 from helper import RunHelper
 
 # Setup logging to StdOut

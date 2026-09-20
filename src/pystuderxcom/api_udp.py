@@ -57,7 +57,7 @@ class AsyncXcomApiUdp(AsyncXcomApiBase):
         self._connected: bool = False
 
 
-    async def start(self, timeout=START_TIMEOUT) -> bool:
+    async def start(self) -> bool:
         """
         Start the Xcom Server and listening to the Xcom client.
         """
@@ -141,7 +141,7 @@ class XcomApiUdp(XcomApiBase):
         self._connected: bool = False
 
 
-    def start(self, timeout=START_TIMEOUT) -> bool:
+    def start(self) -> bool:
         """
         Start the Xcom Server and listening to the Xcom client.
         """

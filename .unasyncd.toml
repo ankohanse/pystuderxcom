@@ -25,6 +25,7 @@ exclude = [
     "example_menu_async.py" = "example_menu.py"
 
 [tool.unasyncd.add_replacements]
+    "AsyncStuderApi" = "StuderApi"
     "AsyncStuderDiscover" = "StuderDiscover"
     "AsyncXcomApiBase" = "XcomApiBase"
     "AsyncXcomApiTcp" = "XcomApiTcp"
