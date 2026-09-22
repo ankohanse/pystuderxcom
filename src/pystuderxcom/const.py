@@ -13,6 +13,9 @@ from .shared.studer_types import (
 )
 
 
+class XcomApiConnectException(Exception):
+    """Exception to indicate failure to connect to the xcom client"""
+
 class XcomApiWriteException(Exception):
     """Exception to indicate failure while writing data to the xcom client"""
     

@@ -29,7 +29,6 @@ from .families import XcomDeviceFamilies
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
 class XcomValueItem(StuderValueItem):
     # From parent class:
     #    datapoint: StuderDatapoint                  # Both in request and response, for request_infos and request_values
@@ -77,7 +76,6 @@ class XcomValueItem(StuderValueItem):
         self.error = error
 
 
-@dataclass
 class XcomValueSet(StuderValueSet):
     # From parent
     #    items: Iterable[StuderValueItem] # Both in request and response

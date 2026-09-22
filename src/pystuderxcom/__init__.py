@@ -4,8 +4,9 @@ from .shared.studer_types import StuderParamException
 from .shared.studer_dataset import StuderDataset, StuderDatapoint, StuderDatapointUnknownException, StuderDatapointSyntaxException, StuderDatapointEnumNotFoundException
 from .shared.studer_families import StuderDeviceFamily, StuderDeviceFamilies, StuderDeviceFamilyUnknownException, StuderDeviceCodeUnknownException, StuderDeviceAddressUnknownException, StuderDeviceSlaveUnknownException
 from .shared.studer_messageset import StuderMessageSet, StuderMessageDef, StuderMessageUnknownException, StuderMessageSyntaxException
-from .shared.studer_interfaces_async import AsyncStuderDiscover, StuderDiscoverFlags
-from .shared.studer_interfaces_sync import StuderDiscover
+from .shared.studer_interfaces_async import AsyncStuderApi, AsyncStuderDiscover, StuderDiscoverFlags
+from .shared.studer_interfaces_sync import StuderApi, StuderDiscover
+from .shared.studer_valueset import StuderValueSet, StuderValueItem
 
 from .api_tcp import AsyncXcomApiTcp, XcomApiTcp
 from .api_udp import AsyncXcomApiUdp, XcomApiUdp

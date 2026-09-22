@@ -14,6 +14,7 @@ from .shared.studer_interfaces_async import AsyncStuderApi
 from .shared.studer_interfaces_sync import StuderApi
 from .shared.studer_types import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderTarget, StuderUserLevel
 from .shared.studer_dataset import StuderDatapoint
+from .shared.studer_valueset import StuderValueSet, StuderValueItem
 from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, REQ_RETRIES, REQ_BURST_PERIOD
 from .const import ScomAddress, XcomAggregationType, ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomQspId
 from .const import XcomApiReadException, XcomApiWriteException, XcomApiUnpackException, XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
@@ -23,8 +24,8 @@ from .families import XcomDeviceFamilies
 from .messages import XcomMessage, XcomMessageSet
 from .protocol import XcomFrame, XcomHeader, XcomPackage
 from .values import XcomValueSet, XcomValueItem
-import time
 import threading
+import time
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -298,7 +299,7 @@ class XcomApiBase(StuderApi):
                 raise XcomApiUnpackException(msg) from None
 
 
-    def request_values(self, request_data: XcomValueSet, retries = None, timeout = None, verbose=False) -> XcomValueSet:
+    def request_values(self, request_data: StuderValueSet, retries = None, timeout = None, verbose=False) -> StuderValueSet:
         """
         Request multiple infos, params or virtuals in one call.
         Can only retrieve actual device values, NOT the average or sum over multiple devices.
@@ -323,6 +324,10 @@ class XcomApiBase(StuderApi):
         idx_last = safe_len(request_data.items)-1
 
         for idx,item in enumerate(request_data.items):
+
+            # If needed, cast StuderValueItem into XcomValueItem so that extra fields are resolved
+            if not isinstance(item, XcomValueItem) and isinstance(item, StuderValueItem):
+                item = XcomValueItem(datapoint=item.datapoint, device=item.code or item.address)
             
             match item.datapoint.target:
                 case StuderTarget.VIRTUAL:
@@ -343,6 +348,7 @@ class XcomApiBase(StuderApi):
                                 req_multi_items.append(item)
 
                             elif item.address is not None:
+                                
                                 # Any others need to be done via an individual request_value cal
                                 req_singles.append(item)
 

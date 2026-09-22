@@ -12,6 +12,7 @@ from .shared.studer_interfaces_async import AsyncStuderApi
 from .shared.studer_interfaces_sync import StuderApi
 from .shared.studer_types import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderTarget, StuderUserLevel
 from .shared.studer_dataset import StuderDatapoint
+from .shared.studer_valueset import StuderValueSet, StuderValueItem
 from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, REQ_RETRIES, REQ_BURST_PERIOD
 from .const import ScomAddress, XcomAggregationType, ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomQspId
 from .const import XcomApiReadException, XcomApiWriteException, XcomApiUnpackException, XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
@@ -294,7 +295,7 @@ class AsyncXcomApiBase(AsyncStuderApi):
                 raise XcomApiUnpackException(msg) from None
 
 
-    async def request_values(self, request_data: XcomValueSet, retries = None, timeout = None, verbose=False) -> XcomValueSet:
+    async def request_values(self, request_data: StuderValueSet, retries = None, timeout = None, verbose=False) -> StuderValueSet:
         """
         Request multiple infos, params or virtuals in one call.
         Can only retrieve actual device values, NOT the average or sum over multiple devices.
@@ -319,6 +320,10 @@ class AsyncXcomApiBase(AsyncStuderApi):
         idx_last = safe_len(request_data.items)-1
 
         for idx,item in enumerate(request_data.items):
+
+            # If needed, cast StuderValueItem into XcomValueItem so that extra fields are resolved
+            if not isinstance(item, XcomValueItem) and isinstance(item, StuderValueItem):
+                item = XcomValueItem(datapoint=item.datapoint, device=item.code or item.address)
             
             match item.datapoint.target:
                 case StuderTarget.VIRTUAL:

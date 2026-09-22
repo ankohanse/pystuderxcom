@@ -9,6 +9,7 @@ from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValueSet, Xco
 from pystuderxcom import XcomVoltage, XcomAggregationType
 from pystuderxcom import StuderDataType
 from helper import RunHelper
+from pystuderxcom.shared.studer_valueset import StuderValueItem, StuderValueSet
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -64,36 +65,36 @@ def main():
         logger.info(f"")
         logger.info(f"Retrieve multiple infos and params in one call")
 
-        req = XcomValueSet([
-            XcomValueItem(datapoint=dataset.get_by_nr(1107, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(1381, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(1382, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(1442, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(1443, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(1444, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3020, "xt"), device="XT1"),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
-            XcomValueItem(datapoint=dataset.get_by_nr(3028, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3031, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3032, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3049, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3078, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3081, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3083, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3101, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3104, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(3119, "xt"), device="XT1"),
-            XcomValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), device="RCC"),
-            XcomValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), device="RCC"),
-            XcomValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), device="RCC"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), device="BSP"),
-            XcomValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), device="XCOM"),
-            XcomValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), device="XCOM"),
-            XcomValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), device="XCOM"),
+        req = StuderValueSet([
+            StuderValueItem(datapoint=dataset.get_by_nr(1107, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1381, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1382, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1442, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1443, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1444, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3020, "xt"), code="XT1"),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
+            StuderValueItem(datapoint=dataset.get_by_nr(3028, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3031, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3032, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3049, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3078, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3081, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3083, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3101, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3104, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3119, "xt"), code="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), code="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), code="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), code="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), code="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), code="XCOM"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), code="XCOM"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), code="XCOM"),
         ])
         rsp = api.request_values(req)
         if rsp:
