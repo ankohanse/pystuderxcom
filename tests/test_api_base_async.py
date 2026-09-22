@@ -11,6 +11,7 @@ from pystuderxcom import XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
 from pystuderxcom import StuderDataType
+from pystuderxcom import StuderValueItem, StuderValueSet
 
 from . import AsyncTestApi, TestApi
 from . import AsyncTaskHelper, TaskHelper
@@ -439,6 +440,35 @@ async def data_infos_virt_aggr(dataset):
     )
     yield req_data, rsp_multi, rsp_single
 
+@pytest_asyncio.fixture
+async def data_studer_dev(dataset):
+    info_3021 = dataset.get_by_nr(3021)
+    info_3022 = dataset.get_by_nr(3022)
+    param_1107 = dataset.get_by_nr(1107)
+
+    req_data = StuderValueSet([
+        StuderValueItem(datapoint=info_3021, device="XT1"),
+        StuderValueItem(datapoint=param_1107, device=101),
+        StuderValueItem(datapoint=info_3022, device=101),
+    ])
+    rsp_multi = XcomValueSet(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValueItem(datapoint=info_3021, aggregation_type=XcomAggregationType.MASTER, value=12.3),
+            XcomValueItem(datapoint=info_3022, aggregation_type=XcomAggregationType.DEVICE1, value=45.6),
+        ]
+    )
+    rsp_single = XcomValueSet(
+        flags = 0x00, 
+        datetime = 0, 
+        items=[
+            XcomValueItem(datapoint=param_1107, aggregation_type=XcomAggregationType.DEVICE1, value=1234.0),
+        ]
+    )
+    yield req_data, rsp_multi, rsp_single
+
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr", "data_infos_virt_dev", "data_infos_virt_aggr")
@@ -521,7 +551,7 @@ async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, ex
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr", "data_infos_virt_dev", "data_infos_virt_aggr")
+@pytest.mark.usefixtures("dataset", "data_infos_dev", "data_infos_aggr", "data_infos_params_dev", "data_infos_params_aggr", "data_infos_virt_dev", "data_infos_virt_aggr", "data_studer_dev")
 @pytest.mark.parametrize(
     "name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except",
     [
@@ -533,6 +563,7 @@ async def test_request_infos(name, values_fixture, run_receive, exp_src_addr, ex
         ("request values params aggr",    "data_infos_params_aggr", False, 0x02, False, False, XcomParamException),
         ("request values virt ok",        "data_infos_virt_dev",    True,  0x02, True,  False, None),
         ("request values virt aggr",      "data_infos_virt_aggr",   False, 0x02, False, False, XcomParamException),
+        ("request values studer ok",      "data_studer_dev",        True,  0x02, True,  False, None),
     ]
 )
 async def test_request_values(name, values_fixture, run_receive, rsp_flags, exp_value, exp_error, exp_except, request):

@@ -10,7 +10,7 @@ import logging
 
 from dataclasses import dataclass
 
-from .studer_types import (
+from ..shared.studer_types import (
     StuderAccess,
     StuderDataType,
     StuderTarget, 
