@@ -319,14 +319,21 @@ class AsyncXcomApiBase(AsyncStuderApi):
         req_multis: list[XcomValueSet] = []
         idx_last = safe_len(request_data.items)-1
 
+        _LOGGER.debug(f"request_values gather")
+              
         for idx,item in enumerate(request_data.items):
 
             # If needed, cast StuderValueItem into XcomValueItem so that extra fields are resolved
+            _LOGGER.debug(f"request_values item pre, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}")
+                          
             if not isinstance(item, XcomValueItem) and isinstance(item, StuderValueItem):
                 item = XcomValueItem(datapoint=item.datapoint, device=item.code or item.address)
-            
+
+            _LOGGER.debug(f"request_values item post, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}")
+                        
             match item.datapoint.target:
                 case StuderTarget.VIRTUAL:
+                    _LOGGER.debug(f"request_values item VIRTUAL")
                     if item.address is not None:
                         # Needs to be done via an individual request_virtual call
                         req_virtuals.append(item)
@@ -336,42 +343,55 @@ class AsyncXcomApiBase(AsyncStuderApi):
 
                 case StuderTarget.STANDARD:
                     # Standard datapoints are handled depending on category and aggregation type
+                    _LOGGER.debug(f"request_values item STANDARD")
                     match item.datapoint.access:
                         case StuderAccess.READ:
+                            _LOGGER.debug(f"request_values item READ")
                             # Info
                             if item.aggregation_type is not None and item.aggregation_type in range(XcomAggregationType.DEVICE1, XcomAggregationType.DEVICE15+1):
+                                _LOGGER.debug(f"request_values item READ aggr")
                                 # Can be combined with other infos in a request_values call
                                 req_multi_items.append(item)
 
                             elif item.address is not None:
+                                _LOGGER.debug(f"request_values item READ addr")
                                 # Any others need to be done via an individual request_value cal
                                 req_singles.append(item)
 
                             else:
+                                _LOGGER.debug(f"request_values item READ raise")
                                 raise XcomParamException(f"Invalid XcomValueItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
 
                         case StuderAccess.WRITE | StuderAccess.READ_WRITE:
+                            _LOGGER.debug(f"request_values item WRITE")
                             # Parameter
                             if item.address is not None:
+                                _LOGGER.debug(f"request_values item WRITE addr")
                                 # Needs to be done via an individual request_value call
                                 req_singles.append(item)
 
                             else:
+                                _LOGGER.debug(f"request_values item WRITE raise")
                                 raise XcomParamException(f"Invalid XcomValueItem passed to request_values; violated by code='{item.code}', address={item.address}, aggregation_type={item.aggregation_type}")
             
             if (len(req_multi_items) == MULTI_INFO_REQ_MAX) or \
                (len(req_multi_items) > 0 and idx == idx_last):
+
+                _LOGGER.debug(f"request_values item next Multi")
 
                 # Start a new multi-items if current one if full or on last item of enumerate
                 req_multis.append( XcomValueSet(items=req_multi_items) )
                 req_multi_items = []
 
         # Now perform all the multi request_values requests
+        _LOGGER.debug(f"request_values perform")
+
         result_items: list[XcomValueSet] = []
         burst_start = datetime.now()
 
         for req_multi in req_multis:
             try:
+                _LOGGER.debug(f"request_values perform multi")
                 rsp_multi = await self.request_infos(req_multi, retries=retries, timeout=timeout, verbose=verbose)
 
                 # Success; gather the returned response items
@@ -400,6 +420,7 @@ class AsyncXcomApiBase(AsyncStuderApi):
         # Next perform all the single request_value requests
         for req_single in req_singles:
             try:
+                _LOGGER.debug(f"request_values perform single")
                 error = None
                 value = await self.request_value(req_single.datapoint, req_single.address, retries=retries, timeout=timeout, verbose=verbose)
             
@@ -429,6 +450,7 @@ class AsyncXcomApiBase(AsyncStuderApi):
         # Finally perform all the virtual request_value requests
         for req_virtual in req_virtuals:
             try:
+                _LOGGER.debug(f"request_values perform virtual")
                 error = None
                 value = await self.request_virtual(req_virtual.datapoint, req_virtual.address, retries=retries, timeout=timeout, verbose=verbose)
             
@@ -456,6 +478,7 @@ class AsyncXcomApiBase(AsyncStuderApi):
                 burst_start = datetime.now()
 
         # Return all reponse items as one XcomValueSet object
+        _LOGGER.debug(f"request_values perform done")
         return XcomValueSet(result_items)
 
 
