@@ -10,6 +10,8 @@ import logging
 
 from dataclasses import dataclass
 
+from pystuderxcom.const import safe_isinstance
+
 from ..shared.studer_types import (
     StuderAccess,
     StuderDataType,
@@ -127,7 +129,7 @@ class StuderDataset:
         if id is None:
             raise StuderParamException(f"Parameter 'id' must be provided in call to get_by_id")
 
-        if isinstance(family, StuderDeviceFamily):
+        if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
             family_id = self._families.get_by_id(family).id
@@ -150,7 +152,7 @@ class StuderDataset:
         if nr is None:
             raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
 
-        if isinstance(family, StuderDeviceFamily):
+        if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
             family_id = self._families.get_by_id(family).id
@@ -173,7 +175,7 @@ class StuderDataset:
         if address is None:
             raise StuderParamException(f"Parameters 'id' must be provided in call to 'get_by_address'")
 
-        if isinstance(family, StuderDeviceFamily):
+        if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
             family_id = self._families.get_by_id(family).id
@@ -189,7 +191,7 @@ class StuderDataset:
 
     def get_menu_items(self, family: StuderDeviceFamily|str, parent_id: str = ""):
 
-        if isinstance(family, StuderDeviceFamily):
+        if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
             family_id = self._families.get_by_id(family).id

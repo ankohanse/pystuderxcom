@@ -12,10 +12,10 @@ from typing import Any
 
 from .shared.studer_interfaces_async import AsyncStuderApi
 from .shared.studer_interfaces_sync import StuderApi
-from .shared.studer_types import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderTarget, StuderUserLevel
+from .shared.studer_types import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderParamException, StuderTarget, StuderUserLevel
 from .shared.studer_dataset import StuderDatapoint
 from .shared.studer_valueset import StuderValueSet, StuderValueItem
-from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, REQ_RETRIES, REQ_BURST_PERIOD
+from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, REQ_RETRIES, REQ_BURST_PERIOD, safe_isinstance
 from .const import ScomAddress, XcomAggregationType, ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomQspId
 from .const import XcomApiReadException, XcomApiWriteException, XcomApiUnpackException, XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from .const import safe_len
@@ -172,7 +172,7 @@ class XcomApiBase(StuderApi):
         if parameter.target != StuderTarget.STANDARD:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target STANDARD. Violated by datapoint '{parameter.name}' ({parameter.nr})")
 
-        if isinstance(device, StuderDiscoveredDevice):
+        if safe_isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device
@@ -219,7 +219,7 @@ class XcomApiBase(StuderApi):
         if parameter.target != StuderTarget.VIRTUAL:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target VIRTUAL. Violated by datapoint '{parameter.name}' ({parameter.nr})")
     
-        if isinstance(device, StuderDiscoveredDevice):
+        if safe_isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device
@@ -328,12 +328,12 @@ class XcomApiBase(StuderApi):
         for idx,item in enumerate(request_data.items):
 
             # If needed, cast StuderValueItem into XcomValueItem so that extra fields are resolved
-            _LOGGER.debug(f"request_values item pre, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}")
+            _LOGGER.debug(f"request_values item pre, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}, safe_isinstance(StuderValueItem)={safe_isinstance(item, StuderValueItem)}")
                           
-            if not isinstance(item, XcomValueItem) and isinstance(item, StuderValueItem):
+            if not isinstance(item, XcomValueItem) and safe_isinstance(item, StuderValueItem):
                 item = XcomValueItem(datapoint=item.datapoint, device=item.code or item.address)
 
-            _LOGGER.debug(f"request_values item post, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}")
+            _LOGGER.debug(f"request_values item post, type={type(item)}, isinstance(XcomValueItem)={isinstance(item, XcomValueItem)}, isinstance(StuderValueItem)={isinstance(item, StuderValueItem)}, safe_isinstance(StuderValueItem)={safe_isinstance(item, StuderValueItem)}")
                         
             match item.datapoint.target:
                 case StuderTarget.VIRTUAL:
@@ -501,7 +501,7 @@ class XcomApiBase(StuderApi):
             _LOGGER.warning(f"Ignoring attempt to update readonly value {parameter}")
             return None
 
-        if isinstance(device, StuderDiscoveredDevice):
+        if safe_isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device

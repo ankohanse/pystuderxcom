@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from typing import Any, Iterable
 
+from pystuderxcom.const import safe_isinstance
+
 from ..shared.studer_dataset import StuderDatapoint
 from ..shared.studer_types import StuderDiscoveredDevice, StuderParamException
 
@@ -30,7 +32,7 @@ class StuderValueItem():
         self.datapoint = datapoint
 
         # Fill the code, address or slave properties we know, rest will be determined from family in derived class
-        if isinstance(device, StuderDiscoveredDevice):
+        if safe_isinstance(device, StuderDiscoveredDevice):
             self.code = device.code
             self.address_or_slave = device.address or device.slave
         elif isinstance(device, int):
