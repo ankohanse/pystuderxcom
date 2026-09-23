@@ -276,21 +276,3 @@ def safe_len(lst: Iterable):
         return sum(1 for i in lst) 
 
 
-def safe_isinstance(obj, cls) -> bool:
-    """
-    Safe version of isinstance that is aware of shared classes.
-    I.e. safe_isinstance(obj, StuderDiscoveredDevice) will return True both
-    on pystuderxcom.shared.StuderDiscoveredDevice as well as
-    on pystudernext.shared.StuderDiscoveredDevice
-    """
-    if type(obj).__module__.startswith('pystuderxcom.shared.') or \
-       type(obj).__module__.startswith('pystudernext.shared.') or \
-       cls.__module__.startswith('pystuderxcom.shared.') or \
-       cls.__module__.startswith('pystudernext.shared.'):
-
-        # Make sure to compare on __mro__ so that parent classes are also matched
-        result = any(t.__name__ == cls.__name__ for t in type(obj).__mro__)
-        return result
-    else:
-        return isinstance(obj, cls)
-

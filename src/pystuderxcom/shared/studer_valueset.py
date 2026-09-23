@@ -11,8 +11,7 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from typing import Any, Iterable
 
-from pystuderxcom.const import safe_isinstance
-
+from ..shared.helpers import safe_isinstance
 from ..shared.studer_dataset import StuderDatapoint
 from ..shared.studer_types import StuderDiscoveredDevice, StuderParamException
 

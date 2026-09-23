@@ -17,10 +17,11 @@ import struct
 from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
+from .shared.helpers import safe_isinstance
 from .shared.studer_dataset import StuderDatapoint
 from .shared.studer_types import StuderDiscoveredDevice
 from .shared.studer_valueset import StuderValueItem, StuderValueSet
-from .const import XcomAggregationType, XcomParamException, safe_isinstance
+from .const import XcomAggregationType, XcomParamException
 from .data import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem
 from .datapoints import XcomDatapoint, XcomDataset
 from .families import XcomDeviceFamilies
