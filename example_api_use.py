@@ -7,9 +7,10 @@ import sys
 from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType
-from pystuderxcom import StuderDataType
+#AJH
+from pystudernext import StuderDataType
+from pystudernext import StuderValueItem, StuderValueSet
 from helper import RunHelper
-from pystuderxcom.shared.studer_valueset import StuderValueItem, StuderValueSet
 
 # Setup logging to StdOut
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -66,35 +67,35 @@ def main():
         logger.info(f"Retrieve multiple infos and params in one call")
 
         req = StuderValueSet([
-            StuderValueItem(datapoint=dataset.get_by_nr(1107, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(1381, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(1382, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(1442, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(1443, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(1444, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3020, "xt"), code="XT1"),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
-            StuderValueItem(datapoint=dataset.get_by_nr(3028, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3031, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3032, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3049, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3078, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3081, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3083, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3101, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3104, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(3119, "xt"), code="XT1"),
-            StuderValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), code="RCC"),
-            StuderValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), code="RCC"),
-            StuderValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), code="RCC"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), code="BSP"),
-            StuderValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), code="XCOM"),
-            StuderValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), code="XCOM"),
-            StuderValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), code="XCOM"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1107, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1381, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1382, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1442, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1443, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1444, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3020, "xt"), code="XT1", address_or_slave=None, value=None, error=None),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
+            StuderValueItem(datapoint=dataset.get_by_nr(3028, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3031, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3032, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3049, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3078, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3081, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3083, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3101, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3104, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(3119, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
         ])
         rsp = api.request_values(req)
         if rsp:

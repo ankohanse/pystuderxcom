@@ -126,6 +126,7 @@ async def test_voltage(voltageAC, voltageDC, nr, exp_unit, exp_def, exp_min, exp
 
 @pytest.mark.asyncio
 async def test_enum():
+    XcomDataset.del_instance()
     dataset = await XcomDataset.async_get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
 
     param = dataset.get_by_nr(1552)
@@ -149,9 +150,9 @@ async def test_enum():
     "family_id, exp_root_len",
     [
         ("xt",  2),
-        ("l1",  0),
-        ("l2",  0),
-        ("l3",  0),
+        ("l1",  2),
+        ("l2",  2),
+        ("l3",  2),
         ("rcc", 2),
         ("bsp", 2),
         ("bms", 2),
@@ -161,6 +162,7 @@ async def test_enum():
     ]
 )
 async def test_menu(family_id, exp_root_len):
+    XcomDataset.del_instance()
     dataset = await XcomDataset.async_get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
     
     root_items = dataset.get_menu_items(family_id)

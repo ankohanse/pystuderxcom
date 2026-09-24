@@ -310,6 +310,7 @@ class XcomDataset(StuderDataset):
     def get_by_nr(self, nr: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
         """
         Find a datapoint by family and nr.
+        Overrides the function in base class StuderDataset.
         In Xcom context, Family can be omitted as all numbers are unique (no overlap between families).
         """
         if nr is None:
@@ -330,4 +331,29 @@ class XcomDataset(StuderDataset):
 
         raise StuderDatapointUnknownException(nr, family_id)
     
+
+    def get_menu_items(self, family: StuderDeviceFamily|str, parent_id: str = ""):
+        """
+        Find menu items by family and parent_id.
+        Overrides the function in base class StuderDataset.
+        """
+        
+        # Carefully determine family id for lookup as families L1,L2 and L3 use datapoints from xt
+        if safe_isinstance(family, StuderDeviceFamily):
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
+        elif isinstance(family, str):
+            family = self._families.get_by_id(family)
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
+        else:
+            family_id = None
+
+        # Xcom uses "0" as root parent_id, while Next uses ""
+        parent_ids = [parent_id] if parent_id else ["","0"]
+
+        datapoints = []
+        for point in self._datapoints:
+            if point.family_id == family_id and point.parent_id in parent_ids:
+                datapoints.append(point)
+
+        return datapoints
 
