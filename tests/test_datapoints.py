@@ -6,13 +6,14 @@ from pystuderxcom import (
     StuderDataset, 
     StuderDatapoint,
     StuderDataType,
+    StuderParamException,
     StuderUserLevel,
     StuderAccess,
     StuderTarget,
     XcomVoltage, 
+    XcomDataset,
+    XcomDeviceFamilies,
 )
-from pystuderxcom.datapoints import XcomDataset
-from pystuderxcom.families import XcomDeviceFamilies
 
 
 def test_init():
@@ -66,10 +67,12 @@ def test_get_instance_sync(voltageAC, voltageDC, exp_len):
         (3000,  XcomDeviceFamilies.L1,      3000, "xt", StuderDataType.FLOAT32, StuderAccess.READ, StuderTarget.STANDARD, None), # L1, L2 and L3 use the datapoints from xt
         (3000,  "xt",  3000,  "xt",   StuderDataType.FLOAT32, StuderAccess.READ,       StuderTarget.STANDARD, None),
         (3000,  "l1",  3000,  "xt",   StuderDataType.FLOAT32, StuderAccess.READ,       StuderTarget.STANDARD, None), # L1, L2 and L3 use the datapoints from xt
+        (3000,  None,  3000,  "xt",   StuderDataType.FLOAT32, StuderAccess.READ,       StuderTarget.STANDARD, None),
         (5012,  "rcc", 5012,  "rcc",  StuderDataType.ENUM32,  StuderAccess.READ_WRITE, StuderTarget.STANDARD, None),
         (99000, None,  99000, "xcom", StuderDataType.BOOL,    StuderAccess.READ,       StuderTarget.VIRTUAL,  None),
-        (9999,  None,  None,  None,   None,                   None,                    None,                  StuderDatapointUnknownException),
+        (None,  "xt",  None,  None,   None,                   None,                    None,                  StuderParamException),
         (3000,  "bsp", None,  None,   None,                   None,                    None,                  StuderDatapointUnknownException),
+        (9999,  None,  None,  None,   None,                   None,                    None,                  StuderDatapointUnknownException),
     ]
 )
 async def test_nr(nr, family, exp_nr, exp_family_id, exp_data_type, exp_access, exp_target, exp_except):

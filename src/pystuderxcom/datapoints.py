@@ -12,16 +12,23 @@ from aiofiles import open as aiofiles_open
 from dataclasses import dataclass
 from enum import StrEnum
 
+
 from .shared.helpers import (
     HybridLock,
+    safe_isinstance,
+)
+from .shared.studer_families import (
+    StuderDeviceFamily,
 )
 from .shared.studer_types import (
     StuderAccess, 
     StuderDataType, 
     StuderTarget, 
     StuderUserLevel,
+    StuderParamException,
 )
 from .shared.studer_dataset import (
+    StuderDatapointUnknownException,
     StuderDataset,
     StuderDatapoint,
     StuderDatapointSyntaxException
@@ -298,4 +305,29 @@ class XcomDataset(StuderDataset):
                 datapoints[idx] = dp
 
         return datapoints
+
+
+    def get_by_nr(self, nr: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
+        """
+        Find a datapoint by family and nr.
+        In Xcom context, Family can be omitted as all numbers are unique (no overlap between families).
+        """
+        if nr is None:
+            raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
+
+        # Carefully determine family id for lookup as families L1,L2 and L3 use datapoints from xt
+        if safe_isinstance(family, StuderDeviceFamily):
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
+        elif isinstance(family, str):
+            family = self._families.get_by_id(family)
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
+        else:
+            family_id = None
+
+        for point in self._datapoints:
+            if point.nr == nr and (point.family_id == family_id or family_id is None):
+                return point
+
+        raise StuderDatapointUnknownException(nr, family_id)
+    
 

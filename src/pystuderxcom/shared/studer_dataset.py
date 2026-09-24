@@ -145,49 +145,50 @@ class StuderDataset:
     def get_by_nr(self, nr: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
         """
         Find a datapoint by family and nr.
-        Family can be omitted as all numbers are unique (no overlap between families).
-        Typically used in Xcom context
+        Typically uses in Xcom context (Next uses address instead of nr)
         """
         if nr is None:
             raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
+        if family is None:
+            raise StuderParamException(f"Parameter 'family' must be provided in call to get_by_nr")
 
-        if safe_isinstance(family, StuderDeviceFamily):
-            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
-        elif isinstance(family, str):
-            family = self._families.get_by_id(family)
-            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
-        else:
-            family_id = None
+        return self._get_by_nr_or_address(nr, family)
 
-        for point in self._datapoints:
-            if point.nr == nr and (point.family_id == family_id or family_id is None):
-                return point
-
-        raise StuderDatapointUnknownException(nr, family_id)
-    
-
-    def get_by_address(self, address: int, family: StuderDeviceFamily|str) -> StuderDatapoint:
+    def get_by_address(self, address: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
         """
         Find a datapoint by family and address.
-        Family must be provided as there is overlap in numbers between families).
-        Typically used in Next context
+        Typically uses in Next context (Xcom uses nr instead of address)
         """
         if address is None:
-            raise StuderParamException(f"Parameters 'id' must be provided in call to 'get_by_address'")
+            raise StuderParamException(f"Parameter 'address' must be provided in call to get_by_address")
+        if family is None:
+            raise StuderParamException(f"Parameter 'family' must be provided in call to get_by_address")
+
+        return self._get_by_nr_or_address(address, family)
+
+    def _get_by_nr_or_address(self, nr_or_addr: int, family: StuderDeviceFamily|str=None) -> StuderDatapoint:
+        """
+        Find a datapoint by family combined with nr or address.
+        Can be used in both Xcom and Next context; Xcom uses its own overridden version of this function.
+        """
+        if nr_or_addr is None:
+            raise StuderParamException(f"Parameter 'nr_or_addr' must be provided in call to _get_by_nr_or_address")
+        if family is None:
+            raise StuderParamException(f"Parameter 'family' must be provided in call to _get_by_nr_or_address")
 
         if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
-            family_id = self._families.get_by_id(family).id
+            family_id = family
         else:
-            raise StuderParamException(f"Parameter 'family' must be provided in call to 'get_by_address' and must be a StuderDeviceFamily or an id-string")
+            raise StuderParamException(f"Parameter 'family' must be a StuderDeviceFamily or a family_id")
 
         for point in self._datapoints:
-            if point.address == address and point.family_id == family_id:
+            if point.nr_or_addr == nr_or_addr and point.family_id == family_id:
                 return point
 
-        raise StuderDatapointUnknownException(address, family_id)
-    
+        raise StuderDatapointUnknownException(nr_or_addr, family_id)
+        
 
     def get_menu_items(self, family: StuderDeviceFamily|str, parent_id: str = ""):
 
