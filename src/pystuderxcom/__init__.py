@@ -19,7 +19,7 @@ from .api_base_sync import XcomApiBase
 from .discover_sync import XcomDiscover
 
 from .const import XcomApiTcpMode, XcomVoltage, XcomAggregationType
-from .const import XcomApiWriteException, XcomApiReadException, XcomApiTimeoutException, XcomApiUnpackException, XcomApiResponseIsError, XcomDiscoverNotConnected, XcomParamException
+from .const import XcomApiConnectException, XcomApiReadException, XcomApiWriteException, XcomApiTimeoutException, XcomApiUnpackException, XcomApiResponseIsError, XcomDiscoverNotConnected, XcomParamException
 from .datapoints import XcomDataset, XcomDatapoint
 from .families import XcomDeviceFamily, XcomDeviceFamilies
 from .messages import XcomMessageSet, XcomMessageDef, XcomMessage
