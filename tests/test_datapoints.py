@@ -12,6 +12,7 @@ from pystuderxcom import (
     XcomVoltage, 
 )
 from pystuderxcom.datapoints import XcomDataset
+from pystuderxcom.families import XcomDeviceFamilies
 
 
 def test_init():
@@ -58,61 +59,40 @@ def test_get_instance_sync(voltageAC, voltageDC, exp_len):
 
 
 @pytest.mark.asyncio
-async def test_nr():
+@pytest.mark.parametrize(
+    "nr, family, exp_nr, exp_family_id, exp_data_type, exp_access, exp_target, exp_except",
+    [
+        (3000,  XcomDeviceFamilies.XTENDER, 3000, "xt", StuderDataType.FLOAT32, StuderAccess.READ, StuderTarget.STANDARD, None),
+        (3000,  XcomDeviceFamilies.L1,      3000, "xt", StuderDataType.FLOAT32, StuderAccess.READ, StuderTarget.STANDARD, None), # L1, L2 and L3 use the datapoints from xt
+        (3000,  "xt",  3000,  "xt",   StuderDataType.FLOAT32, StuderAccess.READ,       StuderTarget.STANDARD, None),
+        (3000,  "l1",  3000,  "xt",   StuderDataType.FLOAT32, StuderAccess.READ,       StuderTarget.STANDARD, None), # L1, L2 and L3 use the datapoints from xt
+        (5012,  "rcc", 5012,  "rcc",  StuderDataType.ENUM32,  StuderAccess.READ_WRITE, StuderTarget.STANDARD, None),
+        (99000, None,  99000, "xcom", StuderDataType.BOOL,    StuderAccess.READ,       StuderTarget.VIRTUAL,  None),
+        (9999,  None,  None,  None,   None,                   None,                    None,                  StuderDatapointUnknownException),
+        (3000,  "bsp", None,  None,   None,                   None,                    None,                  StuderDatapointUnknownException),
+    ]
+)
+async def test_nr(nr, family, exp_nr, exp_family_id, exp_data_type, exp_access, exp_target, exp_except):
+    XcomDataset.del_instance()
     dataset = await XcomDataset.async_get_instance(XcomVoltage.AC240, XcomVoltage.DC48)
 
-    param = dataset.get_by_nr(1107)
-    assert param.family_id == "xt"
-    assert param.nr == 1107
-    assert param.data_type == StuderDataType.FLOAT32
-    assert param.access == StuderAccess.READ_WRITE
-    assert param.target == StuderTarget.STANDARD
+    if not exp_except:
+        param = dataset.get_by_nr(nr, family)
 
-    param = dataset.get_by_nr(1552)
-    assert param.family_id == "xt"
-    assert param.nr == 1552
-    assert param.data_type == StuderDataType.ENUM32
-    assert param.access == StuderAccess.READ_WRITE
-    assert param.enum_options != None
-    assert type(param.enum_options) is dict
-    assert len(param.enum_options) == 3
-    assert param.target == StuderTarget.STANDARD
+        assert param.family_id == exp_family_id
+        assert param.nr == exp_nr
+        assert param.data_type == exp_data_type
+        assert param.access == exp_access
+        assert param.target == exp_target
 
-    param = dataset.get_by_nr(3000)
-    assert param.family_id == "xt"
-    assert param.nr == 3000
-    assert param.data_type == StuderDataType.FLOAT32
-    assert param.access == StuderAccess.READ
-    assert param.target == StuderTarget.STANDARD
+        if exp_data_type == StuderDataType.ENUM32:
+            assert param.enum_options != None
+            assert type(param.enum_options) is dict
 
-    param = dataset.get_by_nr(3000, "xt")
-    assert param.family_id == "xt"
-    assert param.nr == 3000
-    assert param.data_type == StuderDataType.FLOAT32
-    assert param.access == StuderAccess.READ
-    assert param.target == StuderTarget.STANDARD
+    else:
+        with pytest.raises(exp_except):
+             param = dataset.get_by_nr(nr, family)
 
-    param = dataset.get_by_nr(5012, "rcc")
-    assert param.family_id == "rcc"
-    assert param.nr == 5012
-    assert param.data_type == StuderDataType.ENUM32
-    assert param.access == StuderAccess.READ_WRITE
-    assert param.enum_options != None
-    assert type(param.enum_options) is dict
-    assert param.target == StuderTarget.STANDARD
-
-    param = dataset.get_by_nr(99000)
-    assert param.family_id == "xcom"
-    assert param.nr == 99000
-    assert param.data_type == StuderDataType.BOOL
-    assert param.access == StuderAccess.READ
-    assert param.target == StuderTarget.VIRTUAL
-
-    with pytest.raises(StuderDatapointUnknownException):
-        param = dataset.get_by_nr(9999)
-
-    with pytest.raises(StuderDatapointUnknownException):
-        param = dataset.get_by_nr(3000, "bsp")
 
 
 @pytest.mark.asyncio

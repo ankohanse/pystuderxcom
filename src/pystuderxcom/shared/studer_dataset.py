@@ -60,12 +60,12 @@ class StuderDatapoint:
     enum_options: dict = None
 
     @property
-    def nr(self):
+    def nr(self) -> int:
         """In Xcom context, a datapoint is identified by family and nr"""
         return self.nr_or_addr
 
     @property
-    def address(self):
+    def address(self) -> int:
         """In Next context, a datapoint is identified by family and address"""
         return self.nr_or_addr
 
@@ -152,9 +152,10 @@ class StuderDataset:
             raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
 
         if safe_isinstance(family, StuderDeviceFamily):
-            family_id = family.id
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
         elif isinstance(family, str):
-            family_id = self._families.get_by_id(family).id
+            family = self._families.get_by_id(family)
+            family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
         else:
             family_id = None
 
@@ -193,7 +194,7 @@ class StuderDataset:
         if safe_isinstance(family, StuderDeviceFamily):
             family_id = family.id
         elif isinstance(family, str):
-            family_id = self._families.get_by_id(family).id
+            family_id = family
         else:
             raise StuderParamException(f"Parameter 'family_id' must be provided in call to 'get_menu_items'")
 
