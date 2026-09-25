@@ -114,6 +114,10 @@ class StuderDatapoint:
 
 class StuderDataset:
 
+    # Xcom uses "0" as root parent_id, while Next uses ""
+    ROOT_PARENT_IDS = ["0",""]
+
+
     def __init__(self, datapoints: list[StuderDatapoint], families: StuderDeviceFamilies):
         self._datapoints = datapoints
         self._families = families
@@ -200,7 +204,7 @@ class StuderDataset:
             raise StuderParamException(f"Parameter 'family_id' must be provided in call to 'get_menu_items'")
 
         # Xcom uses "0" as root parent_id, while Next uses ""
-        parent_ids = [parent_id] if parent_id else ["","0"]
+        parent_ids = [parent_id] if parent_id else StuderDataset.ROOT_PARENT_IDS
 
         datapoints = []
         for point in self._datapoints:

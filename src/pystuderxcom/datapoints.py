@@ -348,7 +348,7 @@ class XcomDataset(StuderDataset):
             family_id = None
 
         # Xcom uses "0" as root parent_id, while Next uses ""
-        parent_ids = [parent_id] if parent_id else ["","0"]
+        parent_ids = [parent_id] if parent_id else StuderDataset.ROOT_PARENT_IDS
 
         datapoints = []
         for point in self._datapoints:
