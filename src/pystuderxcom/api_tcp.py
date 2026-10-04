@@ -1,36 +1,13 @@
 """xcom_api.py: communication api to Studer Xcom via LAN."""
 
 import asyncio
-import binascii
 import logging
 import socket
 
-from datetime import datetime, timedelta
-import threading
-from typing import Iterable
-
-
-from .api_base_async import (
-    AsyncXcomApiBase,
-    XcomApiWriteException,
-    XcomApiReadException,
-    XcomApiTimeoutException,
-    XcomApiUnpackException,
-    XcomApiResponseIsError,
-)
-from .api_base_sync import (
-    XcomApiBase
-)
-from .const import (
-    START_TIMEOUT,
-    STOP_TIMEOUT,
-    REQ_TIMEOUT,
-    XcomApiTcpMode,
-    XcomParamException,
-)
-from .protocol import (
-    XcomPackage,
-)
+from .api_base_async import AsyncXcomApiBase
+from .api_base_sync import XcomApiBase
+from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, XcomApiTcpMode, XcomParamException
+from .protocol import XcomPackage
 
 
 _LOGGER = logging.getLogger(__name__)

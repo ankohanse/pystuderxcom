@@ -6,30 +6,15 @@ NOTE: this is a draft implementation that has never been tested against a Xcom-2
 """
 
 import asyncio
-import binascii
 import logging
 import socket
 import serial
 import serial_asyncio
 
-
-
-from .api_base_async import (
-    AsyncXcomApiBase,
-    XcomApiReadException,
-    XcomApiTimeoutException,
-    XcomApiWriteException,
-)
-from .api_base_sync import (
-    XcomApiBase,
-)
-from .const import (
-    START_TIMEOUT,
-    REQ_TIMEOUT,
-)
-from .protocol import (
-    XcomPackage,
-)
+from .api_base_async import AsyncXcomApiBase
+from .api_base_sync import XcomApiBase
+from .const import REQ_TIMEOUT
+from .protocol import XcomPackage
 
 
 _LOGGER = logging.getLogger(__name__)

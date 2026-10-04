@@ -11,11 +11,11 @@ from dataclasses import dataclass
 from enum import StrEnum
 from ipaddress import IPv4Address, IPv6Address, ip_address
 
-from .shared.helpers import StuderNetworkHelper
-from .shared.studer_dataset import StuderDataset, StuderDatapointUnknownException
-from .shared.studer_interfaces_async import AsyncStuderDiscover, StuderDiscoverFlags
-from .shared.studer_interfaces_sync import StuderDiscover
-from .shared.studer_types import StuderDiscoveredDevice, StuderDiscoveredGateway, StuderDiscoverNotConnected
+from pystudershared import StuderNetworkHelper
+from pystudershared import StuderDataset, StuderDatapointUnknownException
+from pystudershared import AsyncStuderDiscover, StuderDiscover, StuderDiscoverFlags
+from pystudershared import StuderDiscoveredDevice, StuderDiscoveredGateway, StuderDiscoverNotConnected
+
 from .api_base_async import AsyncXcomApiBase
 from .api_base_sync import XcomApiBase
 from .const import XcomTarget
@@ -28,7 +28,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-class XcomDiscover(StuderDiscover):
+class XcomDiscover(AsyncStuderDiscover):
 
     def __init__(self, api: XcomApiBase, dataset: StuderDataset):
         """

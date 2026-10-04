@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 
-from pystuderxcom import StuderDataType
+from pystudershared import StuderDataType
 from pystuderxcom import XcomVoltage
 from pystuderxcom import XcomDeviceFamilies
 from pystuderxcom import XcomDataset

@@ -13,33 +13,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 
-from .shared.helpers import (
-    HybridLock,
-    safe_isinstance,
-)
-from .shared.studer_families import (
-    StuderDeviceFamily,
-)
-from .shared.studer_types import (
-    StuderAccess, 
-    StuderDataType, 
-    StuderTarget, 
-    StuderUserLevel,
-    StuderParamException,
-)
-from .shared.studer_dataset import (
-    StuderDatapointUnknownException,
-    StuderDataset,
-    StuderDatapoint,
-    StuderDatapointSyntaxException
-)
-from .const import (
-    XcomUserLevel,
-    XcomVoltage,
-)
-from .families import (
-    XcomDeviceFamilies,
-)
+from pystudershared import HybridLock
+from pystudershared import StuderDeviceFamily
+from pystudershared import StuderAccess, StuderDataType, StuderTarget, StuderUserLevel, StuderParamException
+from pystudershared import StuderDataset, StuderDatapoint, StuderDatapointUnknownException, StuderDatapointSyntaxException
+
+from .const import XcomUserLevel, XcomVoltage
+from .families import XcomDeviceFamilies
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -317,7 +297,7 @@ class XcomDataset(StuderDataset):
             raise StuderParamException(f"Parameter 'nr' must be provided in call to get_by_nr")
 
         # Carefully determine family id for lookup as families L1,L2 and L3 use datapoints from xt
-        if safe_isinstance(family, StuderDeviceFamily):
+        if isinstance(family, StuderDeviceFamily):
             family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
         elif isinstance(family, str):
             family = self._families.get_by_id(family)
@@ -339,7 +319,7 @@ class XcomDataset(StuderDataset):
         """
         
         # Carefully determine family id for lookup as families L1,L2 and L3 use datapoints from xt
-        if safe_isinstance(family, StuderDeviceFamily):
+        if isinstance(family, StuderDeviceFamily):
             family_id = family.id_for_nr if hasattr(family, 'id_for_nr') else family.id
         elif isinstance(family, str):
             family = self._families.get_by_id(family)

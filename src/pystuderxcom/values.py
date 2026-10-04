@@ -8,22 +8,16 @@
 ##
 
 
-import asyncio
-import binascii
-from dataclasses import dataclass
-from enum import IntEnum
 import logging
-import struct
-from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
-from .shared.helpers import safe_isinstance
-from .shared.studer_dataset import StuderDatapoint
-from .shared.studer_types import StuderDiscoveredDevice
-from .shared.studer_valueset import StuderValueItem, StuderValueSet
-from .const import XcomAggregationType, XcomParamException
+from pystudershared import StuderDataType, StuderDatapoint
+from pystudershared import StuderDiscoveredDevice
+from pystudershared import StuderValueItem, StuderValueSet
+
+from .const import XcomAggregationType
 from .data import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem
-from .datapoints import XcomDatapoint, XcomDataset
+from .datapoints import XcomDataset
 from .families import XcomDeviceFamilies
 
 
@@ -45,7 +39,7 @@ class XcomValueItem(StuderValueItem):
         # Convert from code, addr and aggr. Code trumps addr and aggr, while addr trumps aggr.
         families = XcomDeviceFamilies.get_instance() # singleton instance
 
-        if safe_isinstance(device, StuderDiscoveredDevice):
+        if isinstance(device, StuderDiscoveredDevice):
             code = device.code
             addr = device.address
             aggr = families.get_aggregationtype_by_code(code)
@@ -135,7 +129,7 @@ class XcomValueSet(StuderValueSet):
         rsp = XcomDataMultiInfoRsp(
             flags = self.flags,
             datetime = self.datetime,
-            items = [XcomDataMultiInfoRspItem(i.datapoint.nr, i.aggregation_type, float(i.value)) for i in self.items]
+            items = [XcomDataMultiInfoRspItem(i.datapoint.nr, i.aggregation_type, i.value) for i in self.items]
         )
         return rsp.pack()
 

@@ -10,12 +10,11 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from .shared.helpers import safe_isinstance
-from .shared.studer_interfaces_async import AsyncStuderApi
-from .shared.studer_interfaces_sync import StuderApi
-from .shared.studer_types import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderParamException, StuderTarget, StuderUserLevel
-from .shared.studer_dataset import StuderDatapoint
-from .shared.studer_valueset import StuderValueSet, StuderValueItem
+from pystudershared import AsyncStuderApi, StuderApi
+from pystudershared import StuderAccess, StuderDataType, StuderDiscoveredDevice, StuderParamException, StuderTarget, StuderUserLevel
+from pystudershared import StuderDatapoint
+from pystudershared import StuderValueSet, StuderValueItem
+
 from .const import START_TIMEOUT, STOP_TIMEOUT, REQ_TIMEOUT, REQ_RETRIES, REQ_BURST_PERIOD
 from .const import ScomAddress, XcomAggregationType, ScomFrameFlag, ScomObjType, ScomObjId, ScomServiceId, ScomQspId
 from .const import XcomApiReadException, XcomApiWriteException, XcomApiUnpackException, XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
@@ -25,8 +24,8 @@ from .families import XcomDeviceFamilies
 from .messages import XcomMessage, XcomMessageSet
 from .protocol import XcomFrame, XcomHeader, XcomPackage
 from .values import XcomValueSet, XcomValueItem
-import time
 import threading
+import time
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 ##
 ## Base cass abstracting Xcom Api
 ##
-class XcomApiBase(StuderApi):
+class XcomApiBase(AsyncStuderApi):
 
     def __init__(self):
         """
@@ -173,7 +172,7 @@ class XcomApiBase(StuderApi):
         if parameter.target != StuderTarget.STANDARD:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target STANDARD. Violated by datapoint '{parameter.name}' ({parameter.nr})")
 
-        if safe_isinstance(device, StuderDiscoveredDevice):
+        if isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device
@@ -196,7 +195,13 @@ class XcomApiBase(StuderApi):
         if response is not None:
             # Unpack the response value
             try:
-                return XcomData.unpack(response.frame_data.service_data.property_data, parameter.data_type)
+                value = XcomData.unpack(response.frame_data.service_data.property_data, parameter.data_type)
+
+                # Resolve enums
+                if parameter.data_type in [StuderDataType.ENUM16, StuderDataType.ENUM32]:
+                    value = parameter.enum_value(value)
+
+                return value
 
             except Exception as e:
                 msg = f"Failed to unpack response package for {parameter.nr}:{dstAddr}, data={response.frame_data.service_data.property_data.hex()}: {e}"
@@ -220,7 +225,7 @@ class XcomApiBase(StuderApi):
         if parameter.target != StuderTarget.VIRTUAL:
             raise XcomParamException(f"Invalid datapoint passed to request_value; must have target VIRTUAL. Violated by datapoint '{parameter.name}' ({parameter.nr})")
     
-        if safe_isinstance(device, StuderDiscoveredDevice):
+        if isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device
@@ -293,7 +298,14 @@ class XcomApiBase(StuderApi):
         if response is not None:
             try:
                 # Unpack the response value
-                return XcomValueSet.unpack_response(response.frame_data.service_data.property_data, request_data)
+                valueset = XcomValueSet.unpack_response(response.frame_data.service_data.property_data, request_data)
+
+                # Resolve enums
+                for item in valueset.items:
+                    if item.datapoint.data_type in [StuderDataType.ENUM16, StuderDataType.ENUM32]:
+                        item.value = item.datapoint.enum_value(item.value)
+
+                return valueset
 
             except Exception as e:
                 msg = f"Failed to unpack response package for multi-info request, data={response.frame_data.service_data.property_data.hex()}: {e}"
@@ -327,7 +339,7 @@ class XcomApiBase(StuderApi):
         for idx,item in enumerate(request_data.items):
 
             # If needed, cast StuderValueItem into XcomValueItem so that extra fields are resolved
-            if not isinstance(item, XcomValueItem) and safe_isinstance(item, StuderValueItem):
+            if not isinstance(item, XcomValueItem) and isinstance(item, StuderValueItem):
                 item = XcomValueItem(datapoint=item.datapoint, device=item.code or item.address)
                         
             match item.datapoint.target:
@@ -479,7 +491,7 @@ class XcomApiBase(StuderApi):
             _LOGGER.warning(f"Ignoring attempt to update readonly value {parameter}")
             return None
 
-        if safe_isinstance(device, StuderDiscoveredDevice):
+        if isinstance(device, StuderDiscoveredDevice):
             dstAddr = device.address
         elif isinstance(device, int):
             dstAddr = device
@@ -489,6 +501,13 @@ class XcomApiBase(StuderApi):
             raise StuderParamException(f"Parameter 'device' must be a XcomDiscoverdDevice, device address or a device code in call to request_value")
 
         _LOGGER.debug(f"Update value {parameter} on address {dstAddr}")
+
+        # Resolve enums
+        if parameter.data_type in [StuderDataType.ENUM16, StuderDataType.ENUM32]:
+            val = parameter.enum_key(value)
+            if val is None:
+                raise StuderParamException(f"Parameter 'value' must be within the enumeration values for datapoint {parameter.family_id}:{parameter.id} request_value. Value={value}")
+            value = val
 
         # Compose the request and send it
         request: XcomPackage = XcomPackage.gen_package(

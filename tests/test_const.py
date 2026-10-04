@@ -1,9 +1,8 @@
-from typing import Literal
 import pytest
 import pytest_asyncio
-from pystuderxcom import StuderDataType, StuderUserLevel
+
+from pystudershared import StuderUserLevel
 from pystuderxcom import XcomVoltage, XcomUserLevel
-from pystuderxcom.datapoints import XcomDatapoint
 
 
 @pytest.mark.parametrize(

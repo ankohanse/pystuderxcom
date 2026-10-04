@@ -8,9 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from typing import Iterable
 
-from .shared.studer_types import (
-    StuderUserLevel
-)
+from pystudershared import StuderUserLevel
 
 
 class XcomApiConnectException(Exception):

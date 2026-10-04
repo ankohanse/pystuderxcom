@@ -7,18 +7,10 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from pystuderxcom.shared.helpers import HybridLock
+from pystudershared import HybridLock
+from pystudershared import StuderDeviceFamilies, StuderDeviceFamily, StuderDeviceFamilyUnknownException, StuderDeviceAddressUnknownException
 
-from .shared.studer_families import (
-    StuderDeviceFamilies,
-    StuderDeviceFamily,
-    StuderDeviceFamilyUnknownException,
-    StuderDeviceAddressUnknownException,
-)
-from .const import (
-    XcomAggregationType,
-    XcomParamException,
-) 
+from .const import XcomAggregationType
 
 
 _LOGGER = logging.getLogger(__name__)

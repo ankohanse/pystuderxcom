@@ -1,10 +1,11 @@
-from datetime import datetime
-import math
 import pytest
 import pytest_asyncio
+
+from datetime import datetime
+
+from pystudershared import StuderDataType
 from pystuderxcom import XcomData, XcomDataMultiInfoReq, XcomDataMultiInfoReqItem, XcomDataMultiInfoRsp, XcomDataMultiInfoRspItem, XcomDataMessageRsp
 from pystuderxcom import XcomAggregationType
-from pystuderxcom import StuderDataType
 
 
 @pytest_asyncio.fixture

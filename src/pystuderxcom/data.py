@@ -18,13 +18,10 @@ import uuid
 from io import BufferedWriter, BufferedReader, BytesIO
 from typing import Any, Iterable
 
-from .shared.studer_types import (
-    StuderDataType,
-)
-from .const import (
-    XcomAggregationType,
-    XcomParamException,
-)
+from pystudershared import StuderDataType
+
+from .const import XcomAggregationType, XcomParamException
+
 
 _LOGGER = logging.getLogger(__name__)
 

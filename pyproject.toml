@@ -13,6 +13,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
+  'pystudershared>=1.0.0,<1.1.0',
   'httpx',
   'asyncudp',
   'pyserial',

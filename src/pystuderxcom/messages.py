@@ -14,20 +14,12 @@ from dataclasses import dataclass
 
 import orjson
 
-from pystuderxcom.shared.helpers import HybridLock
-from pystuderxcom.shared.studer_messageset import StuderMessageDef, StuderMessageSet, StuderMessageSyntaxException, StuderMessageUnknownException
+from pystudershared import HybridLock
+from pystudershared import StuderMessageDef, StuderMessageSet, StuderMessageSyntaxException
+from pystudershared import StuderUserLevel
 
-
-from .shared.studer_types import (
-    StuderUserLevel,
-)
-from .const import (
-    XcomUserLevel
-)
-from .data import (
-    XcomDataMessageRsp,
-)
-
+from .const import XcomUserLevel
+from .data import XcomDataMessageRsp
 
 
 _LOGGER = logging.getLogger(__name__)

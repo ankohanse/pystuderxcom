@@ -1,8 +1,9 @@
 
 import pytest
+
+from pystudershared import StuderDeviceFamilyUnknownException, StuderDeviceCodeUnknownException, StuderDeviceAddressUnknownException, StuderParamException
 from pystuderxcom import XcomDeviceFamilies
 from pystuderxcom import XcomAggregationType
-from pystuderxcom import StuderDeviceFamilyUnknownException, StuderDeviceCodeUnknownException, StuderDeviceAddressUnknownException, StuderParamException
 
 
 def test_create():

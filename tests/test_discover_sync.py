@@ -6,11 +6,11 @@ import threading
 import pytest
 import pytest_asyncio
 
-from pystuderxcom import AsyncXcomDiscover, XcomDiscover, StuderDiscoverFlags
+from pystudershared import StuderDataType
+from pystudershared import StuderDiscoverFlags
+from pystuderxcom import AsyncXcomDiscover, XcomDiscover
 from pystuderxcom import XcomDataset, XcomData, XcomPackage, XcomVoltage
-from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError
-from pystuderxcom import ScomServiceId, ScomObjType, ScomQspId, ScomErrorCode
-from pystuderxcom import StuderDataType
+from pystuderxcom import ScomErrorCode
 from . import AsyncTestApi, TestApi
 
 

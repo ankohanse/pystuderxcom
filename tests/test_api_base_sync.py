@@ -6,14 +6,15 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
+from pystudershared import StuderDataType
+from pystudershared import StuderValueItem, StuderValueSet
+
 from pystuderxcom import AsyncXcomApiBase, XcomApiBase
 from pystuderxcom import XcomApiTimeoutException, XcomApiResponseIsError, XcomParamException
 from pystuderxcom import XcomDataset, XcomData, XcomPackage
 from pystuderxcom import XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType, ScomServiceId, ScomServiceFlag, ScomFrameFlag, ScomObjType, ScomObjId, ScomQspId, ScomAddress, ScomErrorCode
 from pystuderxcom import XcomDataMessageRsp
-from pystuderxcom import StuderDataType
-from pystuderxcom import StuderValueItem, StuderValueSet
 
 from . import AsyncTestApi, TestApi
 from . import AsyncTaskHelper, TaskHelper
@@ -165,7 +166,7 @@ def test_request_guid(name, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, 
         ("request info err",     3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x03, XcomData.pack(ScomErrorCode.READ_PROPERTY_FAILED, StuderDataType.ERROR), None, XcomApiResponseIsError),
         ("request info timeout", 3000, 100, 100, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x00, XcomData.pack(1234.0, StuderDataType.FLOAT32), None, XcomApiTimeoutException),
         ("request param ok",     1107, 100, 100, ScomServiceId.READ, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(1234.0, StuderDataType.FLOAT32), 1234.0, None),
-        ("request param vo",     5012, 501, 501, ScomServiceId.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, StuderDataType.INT32), 32, None),
+        ("request param vo",     5012, 501, 501, ScomServiceId.READ, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x02, XcomData.pack(32, StuderDataType.INT32), 'EXPERT', None),
         ("request virtual err", 99003, 990, 990, ScomServiceId.READ, ScomObjType.INFO, 3000, ScomQspId.VALUE, 0x02, XcomData.pack(1234.0, StuderDataType.FLOAT32), None, XcomParamException),
     ]
 )
@@ -218,7 +219,7 @@ def test_request_value(name, test_nr, test_dest, exp_dst_addr, exp_svc_id, exp_o
         ("update param ok",      1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x02, b'', True, None),
         ("update param err",     1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.WRITE_PROPERTY_FAILED, StuderDataType.ERROR), None, XcomApiResponseIsError),
         ("update param timeout", 1107, 100, 4.0,  100, ScomServiceId.WRITE, ScomObjType.PARAMETER, 1107, ScomQspId.UNSAVED_VALUE, 0x00, b'', True, XcomApiTimeoutException),
-        ("update param vo",      5012, 501, 32,   501, ScomServiceId.WRITE, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.ACCESS_DENIED, StuderDataType.ERROR), None, XcomApiResponseIsError),
+        ("update param vo",      5012, 501, 'EXPERT', 501, ScomServiceId.WRITE, ScomObjType.PARAMETER, 5012, ScomQspId.UNSAVED_VALUE, 0x03, XcomData.pack(ScomErrorCode.ACCESS_DENIED, StuderDataType.ERROR), None, XcomApiResponseIsError),
     ]
 )
 def test_update_value(name, test_nr, test_dest, test_value_update, exp_dst_addr, exp_svc_id, exp_obj_type, exp_obj_id, exp_prop_id, rsp_flags, rsp_data, exp_value, exp_except, request):

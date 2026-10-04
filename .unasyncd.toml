@@ -9,7 +9,6 @@ exclude = [
 ]
 
 [tool.unasyncd.files]
-    "src/pystuderxcom/shared/studer_interfaces_async.py" = "src/pystuderxcom/shared/studer_interfaces_sync.py"
     "src/pystuderxcom/api_base_async.py" = "src/pystuderxcom/api_base_sync.py"
     "src/pystuderxcom/discover_async.py" = "src/pystuderxcom/discover_sync.py"
     "tests/test_api_base_async.py" = "tests/test_api_base_sync.py"
@@ -25,8 +24,6 @@ exclude = [
     "example_menu_async.py" = "example_menu.py"
 
 [tool.unasyncd.add_replacements]
-    "AsyncStuderApi" = "StuderApi"
-    "AsyncStuderDiscover" = "StuderDiscover"
     "AsyncXcomApiBase" = "XcomApiBase"
     "AsyncXcomApiTcp" = "XcomApiTcp"
     "AsyncXcomApiUdp" = "XcomApiUdp"

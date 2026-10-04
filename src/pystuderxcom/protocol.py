@@ -8,37 +8,15 @@
 ##
 
 
-import asyncio
-import binascii
-import io
 import logging
 import struct
 
 from io import BufferedWriter, BufferedReader, BytesIO
 
-from .shared.studer_types import (
-    StuderDataType,
-)
-from .const import (
-    ScomAddress,
-    ScomErrorCode,
-    ScomServiceFlag,
-)
-from .data import (
-    XcomData,
-    read_float,
-    write_float,
-    read_uint32,
-    write_uint32,
-    read_uint16,
-    write_uint16,
-    read_uint8,
-    write_uint8,
-    read_sint32,
-    write_sint32,
-    read_bytes,
-    write_bytes,
-)
+from pystudershared import StuderDataType
+
+from .const import ScomAddress, ScomErrorCode, ScomServiceFlag
+from .data import XcomData, read_float, write_float, read_uint32, write_uint32, read_uint16, write_uint16, read_uint8, write_uint8, read_sint32, write_sint32, read_bytes, write_bytes
 
 
 _LOGGER = logging.getLogger(__name__)

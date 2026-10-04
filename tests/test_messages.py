@@ -1,8 +1,9 @@
 import pytest
 import pytest_asyncio
-from pystuderxcom import StuderUserLevel
-from pystuderxcom import XcomMessage, XcomMessageDef, XcomMessageSet
-from pystuderxcom import StuderMessageUnknownException
+
+from pystudershared import StuderUserLevel
+from pystudershared import StuderMessageUnknownException
+from pystuderxcom import XcomMessageSet
 
 
 def test_init():

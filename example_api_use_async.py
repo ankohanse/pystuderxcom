@@ -5,9 +5,8 @@ import sys
 from pystuderxcom import AsyncXcomApiTcp, XcomApiTcp, XcomApiTcpMode
 from pystuderxcom import XcomDataset, XcomDatapoint, XcomData, XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType
-#AJH
-from pystudernext import StuderDataType
-from pystudernext import StuderValueItem, StuderValueSet
+from pystudershared import StuderDataType
+from pystudershared import StuderValueItem, StuderValueSet
 from helper import RunHelper
 
 # Setup logging to StdOut
@@ -54,7 +53,7 @@ async def main():
 
         # Retrieve param #5012 from RCC (User Level)
         value = await api.request_value(param_5012, "RCC")    # rcc address range is only 501, or use "RCC"
-        logger.info(f"RCC {param_5012.nr}: {param_5012.enum_value(value)} {param_5012.unit or ''} ({param_5012.name})")
+        logger.info(f"RCC {param_5012.nr}: {value} {param_5012.unit or ''} ({param_5012.name})")
 
         # Retrieve virtual info #99003 from XCOM (Is sd-card full)
         value = await api.request_virtual(info_99003, "XCOM")    # xcom address range is only 990, or use "XCOM"
@@ -65,42 +64,40 @@ async def main():
         logger.info(f"Retrieve multiple infos and params in one call")
 
         req = StuderValueSet([
-            StuderValueItem(datapoint=dataset.get_by_nr(1107, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(1381, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(1382, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(1442, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(1443, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(1444, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3020, "xt"), code="XT1", address_or_slave=None, value=None, error=None),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
-            StuderValueItem(datapoint=dataset.get_by_nr(3028, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3031, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3032, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3049, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3078, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3081, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3083, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3101, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3104, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(3119, "xt"), code="XT1", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), code="RCC", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), code="BSP", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
-            StuderValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), code="XCOM", address_or_slave=None, value=None, error=None),
+            StuderValueItem(datapoint=dataset.get_by_nr(1107, "xt"), device="XT1"),  # xt range is address=101 to 109, or use code="XT1" to "XT9"
+            StuderValueItem(datapoint=dataset.get_by_nr(1381, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1382, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1442, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1443, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(1444, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3020, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3028, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3031, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3032, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3049, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3078, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3081, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3083, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3101, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3104, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(3119, "xt"), device="XT1"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5002, "rcc"), device="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5012, "rcc"), device="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(5101, "rcc"), device="RCC"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7007, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7008, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7030, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7031, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7032, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(7033, "bsp"), device="BSP"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99020, "xcom"), device="XCOM"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99021, "xcom"), device="XCOM"),
+            StuderValueItem(datapoint=dataset.get_by_nr(99022, "xcom"), device="XCOM"),
         ])
         rsp = await api.request_values(req)
         if rsp:
             for item in rsp.items:
-                item_value = item.value if item.datapoint.data_type not in [StuderDataType.ENUM16, StuderDataType.ENUM32] else item.datapoint.enum_value(item.value)
-
-                logger.info(f"Values {item.code} {item.datapoint.nr}: {item_value} {item.datapoint.unit or ''} ({item.datapoint.name})")
+                logger.info(f"Values {item.code} {item.datapoint.nr}: {item.value} {item.datapoint.unit or ''} ({item.datapoint.name})")
 
         # Retrieve multiple infos in one call and perform aggregation.
         # Cannot be used on params.
@@ -118,7 +115,6 @@ async def main():
                 logger.info(f"Infos datetime: {rsp.datetime}")
                 for item in rsp.items:
                     item_code = item.code if item.code is not None else str(item.aggregation_type)
-                    item_value = item.value if item.datapoint.data_type not in [StuderDataType.ENUM16, StuderDataType.ENUM32] else item.datapoint.enum_value(item.value)
 
                     logger.info(f"Infos {item_code} {item.datapoint.nr}: {item.value} {item.datapoint.unit or ''} ({item.datapoint.name})")
 

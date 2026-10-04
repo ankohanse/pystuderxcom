@@ -3,7 +3,7 @@ import pytest
 import pytest_asyncio
 from pystuderxcom import XcomValueSet, XcomValueItem
 from pystuderxcom import XcomVoltage, XcomAggregationType
-from pystuderxcom import XcomDataset, XcomDatapoint
+from pystuderxcom import XcomDataset
 
 
 @pytest_asyncio.fixture

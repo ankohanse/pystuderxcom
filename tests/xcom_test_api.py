@@ -1,11 +1,7 @@
 
 import logging
 
-from pystuderxcom import (
-    AsyncXcomApiBase,
-    XcomApiBase,
-    XcomPackage,
-)
+from pystuderxcom import AsyncXcomApiBase, XcomApiBase, XcomPackage
 
 
 _LOGGER = logging.getLogger(__name__)
